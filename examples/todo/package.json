@@ -1,0 +1,21 @@
+{
+  "name": "@flex/example-todo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "db:inspect": "tsx scripts/inspect-db.ts"
+  },
+  "dependencies": {
+    "@flex/client": "0.1.0",
+    "@flex/core": "0.1.0",
+    "@flex/server": "0.1.0"
+  },
+  "devDependencies": {
+    "better-sqlite3": "^11.7.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

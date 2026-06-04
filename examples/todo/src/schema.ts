@@ -1,0 +1,38 @@
+import { defineSchema, defineTable, v } from "@flex/core";
+
+export const schema = defineSchema({
+  users: defineTable({
+    email: v.string(),
+    passwordHash: v.string(),
+    name: v.string(),
+  }).index("by_email", ["email"]),
+
+  sessions: defineTable({
+    userId: v.id("users"),
+    token: v.string(),
+    expiresAt: v.number(),
+  }).index("by_token", ["token"]),
+
+  projects: defineTable({
+    name: v.string(),
+    slug: v.string(),
+    ownerId: v.id("users"),
+  })
+    .index("by_owner", ["ownerId"])
+    .index("by_slug_owner", ["slug", "ownerId"]),
+
+  projectMembers: defineTable({
+    projectId: v.id("projects"),
+    userId: v.id("users"),
+    role: v.string(),
+  })
+    .index("by_project_user", ["projectId", "userId"])
+    .index("by_user", ["userId"]),
+
+  todos: defineTable({
+    projectId: v.id("projects"),
+    text: v.string(),
+    completed: v.boolean(),
+    createdBy: v.id("users"),
+  }).index("by_project", ["projectId"]),
+});

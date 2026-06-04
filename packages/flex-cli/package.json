@@ -1,0 +1,20 @@
+{
+  "name": "@flex/cli",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "flex": "./dist/cli.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@flex/client": "0.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}

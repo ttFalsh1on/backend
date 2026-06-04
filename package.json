@@ -1,0 +1,29 @@
+{
+  "name": "flex-backend",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "examples/*"
+  ],
+  "scripts": {
+    "build": "npm run build -w @flex/core -w @flex/server -w @flex/client -w @flex/cli -w @flex/react",
+    "build:vercel": "npm run build && node scripts/vercel-build.mjs",
+    "vercel:build": "node scripts/vercel-build.mjs",
+    "dev": "npm run dev -w @flex/example-todo",
+    "dev:profile": "npm run dev -w @flex/example-profile",
+    "dev:app": "npm run dev -w @flex/example-vite-react",
+    "flex": "node packages/flex-cli/dist/cli.js",
+    "db:inspect": "npm run db:inspect -w @flex/example-todo",
+    "site:demo": "npx serve examples/plain-html -p 3000",
+    "typecheck": "tsc -b"
+  },
+  "dependencies": {
+    "@flex/core": "0.1.0",
+    "@vercel/node": "^3.2.29",
+    "better-sqlite3": "^11.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
+}
