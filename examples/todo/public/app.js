@@ -47,13 +47,38 @@ function escapeHtml(s) {
   return d.innerHTML;
 }
 
+async function parseApiResponse(res) {
+  const text = await res.text();
+  const contentType = res.headers.get("content-type") ?? "";
+  if (contentType.includes("application/json")) {
+    try {
+      return JSON.parse(text);
+    } catch {
+      throw new Error("Сервер вернул неверный JSON");
+    }
+  }
+  if (text.startsWith("{")) {
+    try {
+      return JSON.parse(text);
+    } catch {
+      /* fall through */
+    }
+  }
+  const preview = text.replace(/\s+/g, " ").slice(0, 120);
+  throw new Error(
+    res.ok
+      ? `Ответ не JSON: ${preview}`
+      : `Ошибка сервера (${res.status}): ${preview || res.statusText}`
+  );
+}
+
 async function httpRun(path, args = {}) {
   const res = await fetch(apiUrl("/api/run"), {
     method: "POST",
     headers: headers(),
     body: JSON.stringify({ path, args }),
   });
-  const data = await res.json();
+  const data = await parseApiResponse(res);
   if (!res.ok) throw new Error(data.error ?? res.statusText);
   return data.value;
 }
@@ -322,8 +347,17 @@ fetch(apiUrl("/api/health"))
   .then(async (r) => {
     if (!r.ok) throw new Error("offline");
     if (state.token) {
-      await loadMe();
-      startSync();
+      try {
+        await loadMe();
+        startSync();
+      } catch {
+        localStorage.removeItem(STORAGE_TOKEN);
+        localStorage.removeItem(STORAGE_PROJECT);
+        state.token = null;
+        state.projectId = null;
+        showAuth();
+        setStatus("", "Войдите снова");
+      }
     } else {
       showAuth();
       setStatus("", "Готов");
