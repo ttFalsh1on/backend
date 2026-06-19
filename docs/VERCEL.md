@@ -4,85 +4,60 @@
 
 | Часть | На Vercel |
 |-------|-----------|
-| Сайт (UI) | `examples/todo/public` |
+| Корень `/` | Минимальная страница «Flex API only» (`public/index.html`) |
 | API | Serverless Functions в `/api` |
-| WebSocket | **Нет** — на Vercel UI обновляется через HTTP polling |
-| База SQLite | `/tmp` на сервере (данные **могут сбрасываться** при cold start) |
+| WebSocket | **Нет** |
+| База SQLite | `/tmp` (данные могут сбрасываться) |
 
-Для продакшена с постоянной БД лучше: [Turso](https://turso.tech), Neon, или бэкенд на Railway/Render + только фронт на Vercel.
-
----
-
-## Ваш проект на Vercel
-
-- **Сайт:** https://flex-backend-three.vercel.app  
-- **Dashboard:** https://vercel.com/ttfalsh1ons-projects/flex-backend  
-
-> Папка `бэкенд` (кириллица) не подходит как имя проекта — в `vercel.json` задано `"name": "flex-backend"`.
+**Ваш фронтенд** деплоится отдельно и ходит на этот API через `VITE_FLEX_URL`.
 
 ---
 
-## Быстрый деплой
+## Настройки проекта в Vercel
 
-### 1. Установите Vercel CLI
+| Поле | Значение |
+|------|----------|
+| **Build Command** | `npm run build` |
+| **Output Directory** | `public` |
+| **Install Command** | `npm install && npm rebuild better-sqlite3` |
 
-```powershell
-npm i -g vercel
-```
+---
 
-### 2. Из корня проекта
+## Деплой
 
 ```powershell
 cd e:\бэкенд
-npm run build:vercel
-vercel
+npm run build
+npx vercel deploy --prod --yes
 ```
 
-Следуйте вопросам (логин, имя проекта). Продакшен:
-
-```powershell
-vercel --prod
-```
-
-### 3. Через GitHub
-
-1. Залейте репозиторий на GitHub  
-2. [vercel.com/new](https://vercel.com/new) → Import репозитория  
-3. **Root Directory:** корень `бэкенд`  
-4. **Build Command:** `npm run build:vercel`  
-5. **Output Directory:** `examples/todo/public`  
-6. Deploy  
+Или `git push` в [github.com/ttFalsh1on/backend](https://github.com/ttFalsh1on/backend) — если репозиторий подключён к Vercel.
 
 ---
 
-## Переменные окружения (Vercel Dashboard → Settings → Environment Variables)
-
-| Переменная | Назначение |
-|------------|------------|
-| `FLEX_DB_PATH` | Путь к SQLite (опционально, по умолчанию `/tmp/flex-vercel.db`) |
-| `FLEX_PUBLIC_API_URL` | Пусто = API на том же домене. Или `https://api.example.com` если API отдельно |
-
----
-
-## Только фронт на Vercel (API на другом сервере)
-
-1. Задеплойте бэкенд локально/Railway: `npx tsx examples/todo/src/server.ts`  
-2. В Vercel задайте `FLEX_PUBLIC_API_URL=https://ваш-api.railway.app`  
-3. Build: `npm run vercel:build` (без serverless API — удалите папку `api` или используйте отдельный проект)
-
----
-
-## Ограничения Vercel
-
-- Нет постоянного диска → SQLite в `/tmp` не для важных данных  
-- Нет WebSocket → real-time через опрос каждые 3 сек  
-- `better-sqlite3` — нативный модуль; при ошибке сборки используйте внешний хостинг API  
-
----
-
-## Проверка после деплоя
+## URL API для вашего сайта
 
 ```
-https://ваш-проект.vercel.app/
-https://ваш-проект.vercel.app/api/health
+https://ваш-проект.vercel.app
 ```
+
+В `.env` фронтенда:
+
+```
+VITE_FLEX_URL=https://ваш-проект.vercel.app
+```
+
+Запросы:
+
+```
+POST https://ваш-проект.vercel.app/api/run
+Authorization: Bearer <token>
+X-Project-Id: <project_id>
+```
+
+---
+
+## Проверка
+
+- `GET /api/health` → `{"ok":true}`
+- `GET /api` → справка по эндпоинтам

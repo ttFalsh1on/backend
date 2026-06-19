@@ -24,28 +24,28 @@ packages/
   flex-cli/     — flex init, flex link, flex codegen
   flex-react/   — useFlexQuery, useFlexMutation
 examples/
-  todo/         — бэкенд + встроенный UI
-  vite-react/   — внешний React-проект → Flex API
+  todo/         — бэкенд (схема, функции, API)
+public/
+  index.html    — минимальная страница «только API» на Vercel
 ```
+
+Фронтенд — **ваш отдельный сайт**, подключается через `@flex/client` и `VITE_FLEX_URL`.
 
 **Подключение к другим проектам:** [docs/INTEGRATION.md](docs/INTEGRATION.md)  
 **Подключить свой сайт:** [docs/CONNECT-YOUR-SITE.md](docs/CONNECT-YOUR-SITE.md)  
 **Деплой на Vercel:** [docs/VERCEL.md](docs/VERCEL.md)  
 **GitHub:** [GITHUB.md](GITHUB.md)
 
-## Быстрый старт
+## Быстрый старт (только API)
 
 ```bash
 npm install
 npm run dev
 ```
 
-В другом терминале:
+Сервер: `http://localhost:3210` — `POST /api/run`, WebSocket для подписок.
 
-```bash
-cd examples/todo
-npx tsx src/demo-client.ts
-```
+В браузере на `/` нет todo-интерфейса — только API. UI — на вашем сайте.
 
 ## Как писать бэкенд
 
