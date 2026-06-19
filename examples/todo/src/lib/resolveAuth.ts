@@ -1,8 +1,7 @@
-import type { ExecuteOptions, AuthContext } from "@flex/core";
-import type { FlexDatabase } from "@flex/core";
+import type { ExecuteOptions, AuthContext, DatabaseReader } from "@flex/core";
 
 export async function resolveAuth(
-  db: FlexDatabase,
+  db: DatabaseReader,
   options: ExecuteOptions
 ): Promise<AuthContext | null> {
   const token = options.token?.trim();

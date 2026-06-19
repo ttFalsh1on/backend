@@ -1,4 +1,7 @@
 import type { FlexDatabase } from "./db.js";
+import type { JsonFlexDatabase } from "./json-db.js";
+
+type RuntimeDb = FlexDatabase | JsonFlexDatabase;
 import type {
   AuthContext,
   ExecuteOptions,
@@ -20,7 +23,7 @@ export interface FunctionModule {
 
 export class FlexRuntime {
   readonly schema: SchemaDefinition;
-  private db: FlexDatabase;
+  private db: RuntimeDb;
   private functions = new Map<string, RegisteredFunction>();
   private authFn?: FlexBackendOptions["auth"];
   private scheduled: Array<{
@@ -29,7 +32,7 @@ export class FlexRuntime {
     args: Record<string, unknown>;
   }> = [];
 
-  constructor(db: FlexDatabase, options: Pick<FlexBackendOptions, "schema" | "auth">) {
+  constructor(db: RuntimeDb, options: Pick<FlexBackendOptions, "schema" | "auth">) {
     this.db = db;
     this.schema = options.schema;
     this.authFn = options.auth;
@@ -62,7 +65,7 @@ export class FlexRuntime {
     return this.functions.get(path);
   }
 
-  getDatabase(): FlexDatabase {
+  getDatabase(): RuntimeDb {
     return this.db;
   }
 

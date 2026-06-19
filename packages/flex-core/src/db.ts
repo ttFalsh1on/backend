@@ -1,7 +1,8 @@
-import Database from "better-sqlite3";
+import { createRequire } from "node:module";
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { randomUUID } from "node:crypto";
+import type DatabaseType from "better-sqlite3";
 import type {
   DatabaseReader,
   DocId,
@@ -112,13 +113,17 @@ class QueryBuilderImpl implements QueryBuilder {
 }
 
 export class FlexDatabase implements DatabaseReader {
-  private sqlite: Database.Database;
+  private sqlite: DatabaseType.Database;
   private schema: SchemaDefinition;
   private writeTables = new Set<string>();
 
   constructor(dbPath: string, schema: SchemaDefinition) {
     mkdirSync(dirname(dbPath), { recursive: true });
-    this.sqlite = new Database(dbPath);
+    const require = createRequire(import.meta.url);
+    const BetterSqlite3 = require("better-sqlite3") as new (
+      path: string
+    ) => DatabaseType.Database;
+    this.sqlite = new BetterSqlite3(dbPath);
     this.schema = schema;
     this.init();
   }
