@@ -30,7 +30,8 @@ examples/
 
 **Подключение к другим проектам:** [docs/INTEGRATION.md](docs/INTEGRATION.md)  
 **Подключить свой сайт:** [docs/CONNECT-YOUR-SITE.md](docs/CONNECT-YOUR-SITE.md)  
-**Деплой на Vercel:** [docs/VERCEL.md](docs/VERCEL.md)
+**Деплой на Vercel:** [docs/VERCEL.md](docs/VERCEL.md)  
+**GitHub:** [GITHUB.md](GITHUB.md)
 
 ## Быстрый старт
 
