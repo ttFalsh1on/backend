@@ -8,6 +8,7 @@
   "scripts": {
     "build": "npm run build -w @flex/core -w @flex/server -w @flex/client -w @flex/cli -w @flex/react",
     "dev": "npm run dev -w @flex/example-todo",
+    "dev:siteforge": "npm run dev -w @flex/example-siteforge",
     "flex": "node packages/flex-cli/dist/cli.js",
     "db:inspect": "npm run db:inspect -w @flex/example-todo",
     "typecheck": "tsc -b"
