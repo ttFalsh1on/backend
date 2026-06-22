@@ -21,9 +21,10 @@ runtime.registerModule("auth", authFns);
 runtime.registerModule("projects", projectFns);
 runtime.registerModule("todos", todoFns);
 
-const server = createFlexServer({ runtime, port: 3210 });
+const publicDir = join(__dirname, "..", "public");
+const server = createFlexServer({ runtime, port: 3210, publicDir });
 
 const { url } = await server.start();
-console.log(`Flex API running at ${url}`);
-console.log(`  POST ${url}/api/run`);
-console.log(`  GET  ${url}/api/health`);
+console.log(`Flex backend running at ${url}`);
+console.log(`  UI:    ${url}/`);
+console.log(`  API:   POST ${url}/api/run`);

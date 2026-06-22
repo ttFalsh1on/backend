@@ -4,12 +4,10 @@
 
 | Часть | На Vercel |
 |-------|-----------|
-| Корень `/` | Минимальная страница «Flex API only» (`public/index.html`) |
+| Корень `/` | UI: вход, проекты, задачи (`examples/todo/public`) |
 | API | Serverless Functions в `/api` |
-| WebSocket | **Нет** |
-| База SQLite | `/tmp` (данные могут сбрасываться) |
-
-**Ваш фронтенд** деплоится отдельно и ходит на этот API через `VITE_FLEX_URL`.
+| WebSocket | **Нет** (UI использует HTTP polling) |
+| База | JSON в `/tmp` (данные могут сбрасываться) |
 
 ---
 
@@ -17,8 +15,8 @@
 
 | Поле | Значение |
 |------|----------|
-| **Build Command** | `npm run build` |
-| **Output Directory** | `public` |
+| **Build Command** | `npm run build:vercel` |
+| **Output Directory** | `examples/todo/public` |
 | **Install Command** | `npm install && npm rebuild better-sqlite3` |
 
 ---
@@ -27,7 +25,7 @@
 
 ```powershell
 cd e:\бэкенд
-npm run build
+npm run build:vercel
 npx vercel deploy --prod --yes
 ```
 
