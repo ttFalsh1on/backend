@@ -84,6 +84,22 @@ export const remove = mutation({
     if (!p) throw new Error("Проект не найден");
     if (p.ownerId !== userId) throw new Error("Только владелец может удалить проект");
 
+    const tables = await ctx.db
+      .query("projectTables")
+      .withIndex("by_project", (q) => q.eq("projectId", id))
+      .collect();
+    for (const t of tables) {
+      await ctx.db.delete("projectTables", t._id as string);
+    }
+
+    const fns = await ctx.db
+      .query("projectFunctions")
+      .withIndex("by_project", (q) => q.eq("projectId", id))
+      .collect();
+    for (const f of fns) {
+      await ctx.db.delete("projectFunctions", f._id as string);
+    }
+
     const members = await ctx.db.query("projectMembers").collect();
     for (const m of members) {
       if (m.projectId === id) {

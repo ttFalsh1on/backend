@@ -28,4 +28,21 @@ export const schema = defineSchema({
   })
     .index("by_project_user", ["projectId", "userId"])
     .index("by_user", ["userId"]),
+
+  projectTables: defineTable({
+    projectId: v.id("projects"),
+    name: v.string(),
+    fieldsJson: v.string(),
+  })
+    .index("by_project", ["projectId"])
+    .index("by_project_name", ["projectId", "name"]),
+
+  projectFunctions: defineTable({
+    projectId: v.id("projects"),
+    name: v.string(),
+    kind: v.string(),
+    argsJson: v.string(),
+  })
+    .index("by_project", ["projectId"])
+    .index("by_project_name", ["projectId", "name"]),
 });

@@ -35,6 +35,19 @@ export async function assertProjectMember(
   }
 }
 
+export async function resolveProjectScope(
+  ctx: FunctionContext,
+  projectId?: string | null
+): Promise<{ userId: string; projectId: string }> {
+  const userId = requireAuth(ctx);
+  const pid = projectId ?? ctx.auth?.projectId ?? null;
+  if (!pid) {
+    throw new Error("Выберите проект");
+  }
+  await assertProjectMember(ctx, pid, userId);
+  return { userId, projectId: pid };
+}
+
 export function slugify(name: string): string {
   return (
     name

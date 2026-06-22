@@ -18,7 +18,7 @@
       <span class="logo-mark">◆</span>
       <div>
         <h1>Flex</h1>
-        <p class="tagline">Аккаунты · Проекты</p>
+        <p class="tagline">Аккаунты · Проекты · Таблицы · Функции</p>
       </div>
     </div>
     <div class="header-actions">
@@ -38,15 +38,34 @@
       </div>
 
       <form id="form-login" class="auth-form">
-        <input type="email" id="login-email" placeholder="Email" required autocomplete="email" />
-        <input type="password" id="login-password" placeholder="Пароль" required autocomplete="current-password" />
+        <label class="field">
+          <span class="field-label">Почта</span>
+          <input type="email" id="login-email" placeholder="you@mail.com" required autocomplete="email" />
+        </label>
+        <label class="field">
+          <span class="field-label">Пароль</span>
+          <input type="password" id="login-password" placeholder="••••••••" required autocomplete="current-password" />
+        </label>
         <button type="submit" class="btn btn-primary">Войти</button>
       </form>
 
       <form id="form-register" class="auth-form" hidden>
-        <input type="text" id="reg-name" placeholder="Имя" required />
-        <input type="email" id="reg-email" placeholder="Email" required autocomplete="email" />
-        <input type="password" id="reg-password" placeholder="Пароль (мин. 6)" required minlength="6" />
+        <label class="field">
+          <span class="field-label">Почта</span>
+          <input type="email" id="reg-email" placeholder="you@mail.com" required autocomplete="email" />
+        </label>
+        <label class="field">
+          <span class="field-label">Пароль</span>
+          <input type="password" id="reg-password" placeholder="Мин. 6 символов" required minlength="6" autocomplete="new-password" />
+        </label>
+        <label class="field">
+          <span class="field-label">Повторить пароль</span>
+          <input type="password" id="reg-password2" placeholder="Ещё раз" required minlength="6" autocomplete="new-password" />
+        </label>
+        <label class="field">
+          <span class="field-label">Имя</span>
+          <input type="text" id="reg-name" placeholder="Как вас зовут" required autocomplete="name" />
+        </label>
         <button type="submit" class="btn btn-primary">Создать аккаунт</button>
       </form>
     </section>
@@ -73,6 +92,44 @@
 
       <ul class="project-list" id="project-list"></ul>
       <p class="project-empty muted" id="projects-empty" hidden>Пока нет проектов — создайте первый выше</p>
+    </section>
+
+    <section class="card schema-card" id="schema-section" hidden>
+      <p class="schema-project-title" id="active-project-title"></p>
+
+      <div class="schema-block">
+        <div class="card-head">
+          <h3>Таблицы</h3>
+          <span class="badge" id="table-count">0</span>
+        </div>
+        <form id="form-new-table" class="schema-form">
+          <input type="text" id="table-name" placeholder="Имя таблицы" required />
+          <div class="field-rows" id="table-fields"></div>
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-add-table-field">+ Поле</button>
+          <button type="submit" class="btn btn-primary">Добавить таблицу</button>
+        </form>
+        <ul class="schema-list" id="table-list"></ul>
+      </div>
+
+      <div class="schema-block">
+        <div class="card-head">
+          <h3>Функции</h3>
+          <span class="badge" id="fn-count">0</span>
+        </div>
+        <form id="form-new-fn" class="schema-form">
+          <div class="fn-row">
+            <input type="text" id="fn-name" placeholder="Имя функции" required />
+            <select id="fn-kind">
+              <option value="query">query</option>
+              <option value="mutation">mutation</option>
+            </select>
+          </div>
+          <div class="field-rows" id="fn-args"></div>
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-add-fn-arg">+ Аргумент</button>
+          <button type="submit" class="btn btn-primary">Добавить функцию</button>
+        </form>
+        <ul class="schema-list" id="fn-list"></ul>
+      </div>
     </section>
   </main>
 

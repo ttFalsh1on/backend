@@ -10,6 +10,8 @@ import { schema } from "../../examples/todo/src/schema";
 import { resolveAuth } from "../../examples/todo/src/lib/resolveAuth";
 import * as authFns from "../../examples/todo/src/functions/auth";
 import * as projectFns from "../../examples/todo/src/functions/projects";
+import * as tableFns from "../../examples/todo/src/functions/tables";
+import * as customFns from "../../examples/todo/src/functions/projectFns";
 
 let runtime: FlexRuntime | null = null;
 
@@ -44,6 +46,8 @@ export function getRuntime(): FlexRuntime {
   });
   rt.registerModule("auth", authFns);
   rt.registerModule("projects", projectFns);
+  rt.registerModule("tables", tableFns);
+  rt.registerModule("projectFns", customFns);
   runtime = rt;
   return runtime;
 }
