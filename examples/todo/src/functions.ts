@@ -1,2 +1,2 @@
-/** @deprecated Используйте модули auth, projects, todos */
-export * from "./functions/todos.js";
+/** @deprecated Используйте модули auth, projects */
+export * from "./functions/projects.js";

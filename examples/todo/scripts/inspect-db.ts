@@ -25,7 +25,7 @@ function listTable(table: string, label: string) {
 listTable("users", "Пользователи");
 listTable("projects", "Проекты");
 listTable("projectMembers", "Участники");
-listTable("todos", "Задачи");
+listTable("projects", "Проекты");
 listTable("sessions", "Сессии");
 
 db.close();

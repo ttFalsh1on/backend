@@ -28,11 +28,4 @@ export const schema = defineSchema({
   })
     .index("by_project_user", ["projectId", "userId"])
     .index("by_user", ["userId"]),
-
-  todos: defineTable({
-    projectId: v.id("projects"),
-    text: v.string(),
-    completed: v.boolean(),
-    createdBy: v.id("users"),
-  }).index("by_project", ["projectId"]),
 });

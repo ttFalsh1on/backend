@@ -1,6 +1,6 @@
 import { mutation, query, v } from "@flex/core";
 import { hashPassword, verifyPassword, createSessionToken } from "../lib/crypto.js";
-import { SESSION_MS, requireAuth, slugify } from "../lib/access.js";
+import { SESSION_MS, requireAuth } from "../lib/access.js";
 
 export const register = mutation({
   args: {
@@ -26,18 +26,6 @@ export const register = mutation({
       name: name.trim(),
     });
 
-    const projectId = await ctx.db.insert("projects", {
-      name: "Мой проект",
-      slug: "my-project",
-      ownerId: userId,
-    });
-
-    await ctx.db.insert("projectMembers", {
-      projectId,
-      userId,
-      role: "owner",
-    });
-
     const token = createSessionToken();
     await ctx.db.insert("sessions", {
       userId,
@@ -48,7 +36,6 @@ export const register = mutation({
     return {
       token,
       user: { _id: userId, email: normalized, name: name.trim() },
-      project: { _id: projectId, name: "Мой проект", slug: "my-project" },
     };
   },
 });

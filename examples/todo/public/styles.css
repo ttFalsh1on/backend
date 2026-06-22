@@ -361,81 +361,55 @@ body {
   color: var(--danger);
 }
 
-.todo-list {
+.project-list {
   list-style: none;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.todo-item {
+.project-item {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 0.75rem;
   padding: 0.85rem 1rem;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 10px;
   transition: background 0.2s, border-color 0.2s;
-  animation: slideIn 0.25s ease;
 }
 
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-6px);
-  }
-}
-
-.todo-item:hover {
+.project-item:hover {
   background: var(--surface-hover);
   border-color: rgba(255, 255, 255, 0.08);
 }
 
-.todo-item.done .todo-text {
-  text-decoration: line-through;
-  color: var(--text-muted);
-}
-
-.todo-check {
-  width: 22px;
-  height: 22px;
-  border-radius: 6px;
-  border: 2px solid var(--text-muted);
-  background: transparent;
-  cursor: pointer;
-  flex-shrink: 0;
+.project-info {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: border-color 0.2s, background 0.2s;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
 }
 
-.todo-item.done .todo-check {
-  background: var(--accent);
-  border-color: var(--accent);
-}
-
-.todo-item.done .todo-check::after {
-  content: "✓";
-  font-size: 0.75rem;
-  color: #0c0e12;
-  font-weight: 700;
-}
-
-.todo-text {
-  flex: 1;
+.project-name {
   font-size: 0.95rem;
-  word-break: break-word;
+  font-weight: 500;
 }
 
-.todo-meta {
+.project-slug {
   font-family: var(--mono);
-  font-size: 0.65rem;
+  font-size: 0.72rem;
   color: var(--text-muted);
 }
 
-.todo-empty,
+.project-role {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: capitalize;
+}
+
+.project-empty,
 .muted {
   color: var(--text-muted);
   font-size: 0.9rem;

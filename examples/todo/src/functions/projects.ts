@@ -84,14 +84,6 @@ export const remove = mutation({
     if (!p) throw new Error("Проект не найден");
     if (p.ownerId !== userId) throw new Error("Только владелец может удалить проект");
 
-    const todos = await ctx.db
-      .query("todos")
-      .withIndex("by_project", (q) => q.eq("projectId", id))
-      .collect();
-    for (const t of todos) {
-      await ctx.db.delete("todos", t._id as string);
-    }
-
     const members = await ctx.db.query("projectMembers").collect();
     for (const m of members) {
       if (m.projectId === id) {

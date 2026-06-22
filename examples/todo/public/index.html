@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Flex — Проекты</title>
+  <title>Flex — Профиль</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -18,7 +18,7 @@
       <span class="logo-mark">◆</span>
       <div>
         <h1>Flex</h1>
-        <p class="tagline">Аккаунты · Проекты · Задачи</p>
+        <p class="tagline">Аккаунты · Проекты</p>
       </div>
     </div>
     <div class="header-actions">
@@ -30,7 +30,6 @@
     </div>
   </header>
 
-  <!-- Экран входа -->
   <main class="auth-screen" id="auth-screen">
     <section class="card auth-card">
       <div class="auth-tabs">
@@ -53,36 +52,27 @@
     </section>
   </main>
 
-  <!-- Основное приложение -->
   <main class="layout app-screen" id="app-screen" hidden>
-    <section class="card projects-bar">
-      <div class="projects-row">
-        <label>
-          <span class="label">Проект</span>
-          <select id="project-select"></select>
-        </label>
-        <form id="form-new-project" class="inline-form">
-          <input type="text" id="new-project-name" placeholder="Новый проект" />
-          <button type="submit" class="btn btn-primary">+</button>
-        </form>
+    <section class="card profile-card">
+      <div class="card-head">
+        <h2>Профиль</h2>
       </div>
       <p class="user-line" id="user-line"></p>
     </section>
 
-    <section class="card todos-card">
+    <section class="card projects-card">
       <div class="card-head">
-        <h2>Задачи</h2>
-        <span class="badge" id="todo-count">0</span>
+        <h2>Мои проекты</h2>
+        <span class="badge" id="project-count">0</span>
       </div>
 
-      <form class="add-form" id="add-form">
-        <input type="text" id="todo-input" placeholder="Новая задача…" autocomplete="off" required />
-        <button type="submit" class="btn btn-primary">Добавить</button>
+      <form class="add-form" id="form-new-project">
+        <input type="text" id="new-project-name" placeholder="Название проекта…" autocomplete="off" required />
+        <button type="submit" class="btn btn-primary">Создать</button>
       </form>
 
-      <ul class="todo-list" id="todo-list">
-        <li class="todo-empty">Выберите проект</li>
-      </ul>
+      <ul class="project-list" id="project-list"></ul>
+      <p class="project-empty muted" id="projects-empty" hidden>Пока нет проектов — создайте первый выше</p>
     </section>
   </main>
 

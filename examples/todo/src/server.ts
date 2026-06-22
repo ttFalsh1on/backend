@@ -6,7 +6,6 @@ import { schema } from "./schema.js";
 import { resolveAuth } from "./lib/resolveAuth.js";
 import * as authFns from "./functions/auth.js";
 import * as projectFns from "./functions/projects.js";
-import * as todoFns from "./functions/todos.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const dbPath = join(__dirname, "..", "data", "flex.db");
@@ -19,7 +18,6 @@ const runtime = createRuntime(db, {
 
 runtime.registerModule("auth", authFns);
 runtime.registerModule("projects", projectFns);
-runtime.registerModule("todos", todoFns);
 
 const publicDir = join(__dirname, "..", "public");
 const server = createFlexServer({ runtime, port: 3210, publicDir });
