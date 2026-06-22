@@ -14,13 +14,9 @@ class TableBuilder<T extends Record<string, Validator>> {
     this.fields = fields;
   }
 
-  index(name: string, fields: (keyof T & string)[]): TableDefinition {
+  index(name: string, fields: (keyof T & string)[]): this {
     this.indexes.push({ name, fields: fields as string[] });
-    return {
-      name: "",
-      fields: this.fields as Record<string, Validator>,
-      indexes: this.indexes,
-    };
+    return this;
   }
 
   /** Finalize table without extra indexes */
