@@ -257,14 +257,18 @@ async function loadMe() {
   showApp();
 }
 
-document.querySelectorAll(".auth-tab").forEach((tab) => {
-  tab.addEventListener("click", () => {
-    document.querySelectorAll(".auth-tab").forEach((t) => t.classList.remove("active"));
-    tab.classList.add("active");
-    const name = tab.dataset.tab;
-    $("#form-login").hidden = name !== "login";
-    $("#form-register").hidden = name !== "register";
+function switchAuthTab(tab) {
+  document.querySelectorAll(".auth-tab").forEach((t) => {
+    t.classList.toggle("active", t.dataset.tab === tab);
   });
+  const loginForm = $("#form-login");
+  const registerForm = $("#form-register");
+  loginForm.hidden = tab !== "login";
+  registerForm.hidden = tab !== "register";
+}
+
+document.querySelectorAll(".auth-tab").forEach((tab) => {
+  tab.addEventListener("click", () => switchAuthTab(tab.dataset.tab));
 });
 
 $("#form-login").addEventListener("submit", async (e) => {
@@ -291,9 +295,10 @@ $("#form-register").addEventListener("submit", async (e) => {
     return;
   }
   try {
+    const email = $("#reg-email").value.trim();
     const res = await httpRun("auth:register", {
       name: $("#reg-name").value.trim(),
-      email: $("#reg-email").value.trim(),
+      email,
       password,
     });
     state.token = res.token;
@@ -464,6 +469,7 @@ fetch(apiUrl("/api/health"))
       }
     } else {
       showAuth();
+      switchAuthTab("login");
       setStatus("", "Готов");
     }
   })

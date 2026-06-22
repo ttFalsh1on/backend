@@ -129,6 +129,13 @@ body {
   gap: 0.85rem;
 }
 
+.auth-form[hidden],
+.app-screen[hidden],
+#btn-logout[hidden],
+[hidden] {
+  display: none !important;
+}
+
 .field {
   display: flex;
   flex-direction: column;
