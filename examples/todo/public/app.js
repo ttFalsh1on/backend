@@ -103,12 +103,14 @@ async function httpRun(path, args = {}) {
 }
 
 function showAuth() {
+  document.documentElement.classList.remove("has-session");
   authScreen.hidden = false;
   appScreen.hidden = true;
   btnLogout.hidden = true;
 }
 
 function showApp() {
+  document.documentElement.classList.add("has-session");
   authScreen.hidden = true;
   appScreen.hidden = false;
   btnLogout.hidden = false;
@@ -462,10 +464,15 @@ fnList.addEventListener("click", async (e) => {
 
 tableFields.insertAdjacentHTML("beforeend", fieldRowHtml("table"));
 
-// Сразу показываем форму — не ждём ответа сервера
-showAuth();
-switchAuthTab("login");
-setStatus("", "Подключение…");
+if (state.token) {
+  showApp();
+  userLine.textContent = "Загрузка…";
+  setStatus("", "Загрузка…");
+} else {
+  showAuth();
+  switchAuthTab("login");
+  setStatus("", "Готов");
+}
 
 fetchWithTimeout(apiUrl("/api/health"))
   .then(async (r) => {
@@ -482,12 +489,14 @@ fetchWithTimeout(apiUrl("/api/health"))
         switchAuthTab("login");
         setStatus("", "Войдите снова");
       }
-    } else {
-      setStatus("", "Готов");
     }
   })
   .catch(() => {
-    showAuth();
-    switchAuthTab("login");
-    setStatus("error", "Сервер не отвечает");
+    if (!state.token) {
+      showAuth();
+      switchAuthTab("login");
+      setStatus("error", "Сервер не отвечает");
+    } else {
+      setStatus("error", "Нет связи с сервером");
+    }
   });

@@ -136,6 +136,18 @@ body {
   display: none !important;
 }
 
+html.has-session #auth-screen {
+  display: none !important;
+}
+
+html.has-session #app-screen {
+  display: flex !important;
+}
+
+html.has-session #btn-logout {
+  display: inline-flex !important;
+}
+
 .field {
   display: flex;
   flex-direction: column;

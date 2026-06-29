@@ -4,6 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Flex — Профиль</title>
+  <script>
+    try {
+      if (localStorage.getItem("flex_token")) {
+        document.documentElement.classList.add("has-session");
+      }
+    } catch (_) {}
+  </script>
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
