@@ -57,10 +57,12 @@ function apiUrl(path) {
   return API ? `${API}${path}` : path;
 }
 
-function headers() {
+function headers(opts = {}) {
   const h = { "Content-Type": "application/json" };
-  if (state.token) h.Authorization = `Bearer ${state.token}`;
-  if (state.activeProjectId) h["X-Project-Id"] = state.activeProjectId;
+  if (!opts.skipAuth && state.token) h.Authorization = `Bearer ${state.token}`;
+  if (!opts.skipAuth && state.activeProjectId) {
+    h["X-Project-Id"] = state.activeProjectId;
+  }
   return h;
 }
 
@@ -100,10 +102,10 @@ async function parseApiResponse(res) {
   );
 }
 
-async function httpRun(path, args = {}) {
+async function httpRun(path, args = {}, opts = {}) {
   const res = await fetchWithTimeout(apiUrl("/api/run"), {
     method: "POST",
-    headers: headers(),
+    headers: headers(opts),
     body: JSON.stringify({ path, args }),
   });
   const data = await parseApiResponse(res);
@@ -448,18 +450,35 @@ document.querySelectorAll(".auth-tab").forEach((tab) => {
   tab.addEventListener("click", () => switchAuthTab(tab.dataset.tab));
 });
 
+async function finishAuth(res, password) {
+  state.token = res.token;
+  localStorage.setItem(STORAGE_TOKEN, state.token);
+  if (password) setSessionPassword(password);
+  try {
+    await loadMe();
+  } catch {
+    state.user = res.user;
+    state.projects = [];
+    renderProjects();
+    showApp();
+    showProfileView();
+    setStatus("connected", "В сети");
+  }
+}
+
 $("#form-login").addEventListener("submit", async (e) => {
   e.preventDefault();
   const password = $("#login-password").value;
   try {
-    const res = await httpRun("auth:login", {
-      email: $("#login-email").value.trim(),
-      password,
-    });
-    state.token = res.token;
-    localStorage.setItem(STORAGE_TOKEN, state.token);
-    setSessionPassword(password);
-    await loadMe();
+    const res = await httpRun(
+      "auth:login",
+      {
+        email: $("#login-email").value.trim(),
+        password,
+      },
+      { skipAuth: true }
+    );
+    await finishAuth(res, password);
   } catch (err) {
     const msg = err.message || "Ошибка входа";
     if (msg.includes("не найден") || msg.includes("зарегистрируйтесь")) {
@@ -481,17 +500,25 @@ $("#form-register").addEventListener("submit", async (e) => {
   }
   try {
     const email = $("#reg-email").value.trim();
-    const res = await httpRun("auth:register", {
-      name: $("#reg-name").value.trim(),
-      email,
-      password,
-    });
-    state.token = res.token;
-    localStorage.setItem(STORAGE_TOKEN, state.token);
-    setSessionPassword(password);
-    await loadMe();
+    const res = await httpRun(
+      "auth:register",
+      {
+        name: $("#reg-name").value.trim(),
+        email,
+        password,
+      },
+      { skipAuth: true }
+    );
+    await finishAuth(res, password);
   } catch (err) {
-    alert(err.message);
+    const msg = err.message || "Ошибка регистрации";
+    if (msg.includes("занят")) {
+      switchAuthTab("login");
+      $("#login-email").value = $("#reg-email").value.trim();
+      setStatus("auth", "Этот email уже зарегистрирован — войдите");
+      return;
+    }
+    alert(msg);
   }
 });
 

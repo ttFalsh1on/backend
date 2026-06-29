@@ -28,12 +28,17 @@ async function loadBlobStore(): Promise<StoreData> {
 
 async function saveBlobStore(json: string): Promise<void> {
   const { put } = await import("@vercel/blob");
-  await put(BLOB_KEY, json, {
-    access: BLOB_ACCESS,
-    addRandomSuffix: false,
-    allowOverwrite: true,
-    contentType: "application/json",
-  });
+  try {
+    await put(BLOB_KEY, json, {
+      access: BLOB_ACCESS,
+      addRandomSuffix: false,
+      allowOverwrite: true,
+      contentType: "application/json",
+    });
+  } catch (err) {
+    console.error("Blob save failed:", err);
+    throw new Error("Не удалось сохранить данные на сервере");
+  }
 }
 
 export async function createApiDatabase(

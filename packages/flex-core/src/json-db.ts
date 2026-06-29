@@ -57,6 +57,8 @@ export class JsonFlexDatabase implements DatabaseReader {
   private store: StoreData = {};
   private writeTables = new Set<string>();
   private onPersist?: JsonDatabaseOptions["onPersist"];
+  private inTransaction = false;
+  private dirty = false;
 
   constructor(
     filePath: string,
@@ -78,14 +80,23 @@ export class JsonFlexDatabase implements DatabaseReader {
     }
   }
 
-  private persist(): void {
+  private async flushPersist(): Promise<void> {
     const json = JSON.stringify(this.store);
     const tmp = `${this.filePath}.tmp`;
     writeFileSync(tmp, json, "utf8");
     renameSync(tmp, this.filePath);
     if (this.onPersist) {
-      void this.onPersist(json);
+      await this.onPersist(json);
     }
+    this.dirty = false;
+  }
+
+  private persist(): void {
+    if (this.inTransaction) {
+      this.dirty = true;
+      return;
+    }
+    void this.flushPersist();
   }
 
   getWrittenTables(): string[] {
@@ -254,7 +265,17 @@ export class JsonFlexDatabase implements DatabaseReader {
   }
 
   async transactionAsync<T>(fn: () => Promise<T>): Promise<T> {
-    return fn();
+    this.inTransaction = true;
+    this.dirty = false;
+    try {
+      const result = await fn();
+      if (this.dirty) {
+        await this.flushPersist();
+      }
+      return result;
+    } finally {
+      this.inTransaction = false;
+    }
   }
 
   close(): void {}
