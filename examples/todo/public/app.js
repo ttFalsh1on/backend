@@ -15,7 +15,9 @@ const appScreen = $("#app-screen");
 const statusEl = $("#status");
 const statusText = statusEl.querySelector(".status-text");
 const btnLogout = $("#btn-logout");
-const appNav = $("#app-nav");
+const btnProfileAvatar = $("#btn-profile-avatar");
+const avatarInitials = $("#avatar-initials");
+const btnBackFromProfile = $("#btn-back-from-profile");
 const viewProfile = $("#view-profile");
 const profileDetails = $("#profile-details");
 const profilePasswordHint = $("#profile-password-hint");
@@ -114,6 +116,7 @@ function showAuth() {
   authScreen.hidden = false;
   appScreen.hidden = true;
   btnLogout.hidden = true;
+  btnProfileAvatar.hidden = true;
 }
 
 function showApp() {
@@ -121,7 +124,32 @@ function showApp() {
   authScreen.hidden = true;
   appScreen.hidden = false;
   btnLogout.hidden = false;
+  btnProfileAvatar.hidden = false;
+  updateHeaderAvatar();
   setStatus("connected", "В сети");
+}
+
+function userInitials(user) {
+  if (!user) return "?";
+  const name = user.name?.trim();
+  if (name) {
+    const parts = name.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return name.slice(0, 2).toUpperCase();
+  }
+  return (user.email?.[0] ?? "?").toUpperCase();
+}
+
+function updateHeaderAvatar() {
+  if (!state.user) {
+    avatarInitials.textContent = "?";
+    btnProfileAvatar.classList.remove("active");
+    return;
+  }
+  avatarInitials.textContent = userInitials(state.user);
+  btnProfileAvatar.title = state.user.name || state.user.email;
 }
 
 function fieldRowHtml(prefix) {
@@ -170,11 +198,21 @@ function getSessionPassword() {
   }
 }
 
+const PW_TOGGLE_ICONS = `<svg class="pw-icon pw-icon-show" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg><svg class="pw-icon pw-icon-hide" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
+
+function ensureToggleIcons(btn) {
+  if (!btn.querySelector(".pw-icon")) {
+    btn.insertAdjacentHTML("beforeend", PW_TOGGLE_ICONS);
+  }
+}
+
 function initPasswordToggles(root = document) {
   root.querySelectorAll(".pw-toggle").forEach((btn) => {
+    ensureToggleIcons(btn);
     if (btn.dataset.bound) return;
     btn.dataset.bound = "1";
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
       const input = document.getElementById(btn.dataset.target);
       if (!input) return;
       const show = input.type === "password";
@@ -185,10 +223,30 @@ function initPasswordToggles(root = document) {
   });
 }
 
-function setActiveNavTab(view) {
-  document.querySelectorAll(".app-nav-tab").forEach((tab) => {
-    tab.classList.toggle("active", tab.dataset.view === view);
-  });
+function setProfileAvatarActive(active) {
+  btnProfileAvatar.classList.toggle("active", active);
+}
+
+function showProfileView() {
+  viewProfile.hidden = false;
+  viewProjects.hidden = true;
+  viewProject.hidden = true;
+  setProfileAvatarActive(true);
+  renderProfile();
+}
+
+function showProjectsView() {
+  viewProfile.hidden = true;
+  viewProjects.hidden = false;
+  viewProject.hidden = true;
+  setProfileAvatarActive(false);
+}
+
+function showProjectView() {
+  viewProfile.hidden = true;
+  viewProjects.hidden = true;
+  viewProject.hidden = false;
+  setProfileAvatarActive(false);
 }
 
 function renderProfile() {
@@ -229,10 +287,7 @@ function renderProfile() {
             readonly
             ${passwordMissing ? 'placeholder="Войдите снова, чтобы увидеть"' : ""}
           />
-          <button type="button" class="pw-toggle" data-target="profile-password-display" aria-label="Показать пароль">
-            <svg class="pw-icon pw-icon-show" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 5C7 5 2.73 8.11 1 12.5 2.73 16.89 7 20 12 20s9.27-3.11 11-7.5C21.27 8.11 17 5 12 5zm0 11a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>
-            <svg class="pw-icon pw-icon-hide" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 6.5c2.5 0 4.7 1 6.4 2.6l1.5-1.5 1.4 1.4-1.5 1.5c1.3 1.6 2.2 3.5 2.5 5.5l-2 .5c-.3-1.6-1-3.1-2-4.3-1.6 1.5-3.7 2.4-6.3 2.4-2.5 0-4.7-1-6.4-2.6L2.3 19.7.9 18.3l1.5-1.5C1.1 15.2.2 13.3 0 11.5l2-.5c.3 1.6 1 3.1 2 4.3 1.6-1.5 3.7-2.4 6-2.4zm0 7a3.5 3.5 0 0 0 3.5-3.5A3.5 3.5 0 0 0 12 10a3.5 3.5 0 0 0-3.5 3.5A3.5 3.5 0 0 0 12 13.5z"/></svg>
-          </button>
+          <button type="button" class="pw-toggle" data-target="profile-password-display" aria-label="Показать пароль"></button>
         </div>
       </dd>
     </div>
@@ -242,30 +297,7 @@ function renderProfile() {
     </div>`;
 
   initPasswordToggles(profileDetails);
-}
-
-function showProfileView() {
-  viewProfile.hidden = false;
-  viewProjects.hidden = true;
-  viewProject.hidden = true;
-  appNav.hidden = false;
-  setActiveNavTab("profile");
-  renderProfile();
-}
-
-function showProjectsView() {
-  viewProfile.hidden = true;
-  viewProjects.hidden = false;
-  viewProject.hidden = true;
-  appNav.hidden = false;
-  setActiveNavTab("projects");
-}
-
-function showProjectView() {
-  viewProfile.hidden = true;
-  viewProjects.hidden = true;
-  viewProject.hidden = false;
-  appNav.hidden = true;
+  updateHeaderAvatar();
 }
 
 function renderProjects() {
@@ -398,7 +430,7 @@ async function loadMe() {
   if (reopen) {
     await openProject(savedId);
   } else {
-    showProfileView();
+    showProjectsView();
   }
 }
 
@@ -463,14 +495,16 @@ $("#form-register").addEventListener("submit", async (e) => {
   }
 });
 
-appNav.addEventListener("click", (e) => {
-  const tab = e.target.closest(".app-nav-tab");
-  if (!tab) return;
-  if (tab.dataset.view === "profile") {
+btnProfileAvatar.addEventListener("click", () => {
+  if (viewProfile.hidden) {
     showProfileView();
-  } else if (tab.dataset.view === "projects") {
+  } else {
     showProjectsView();
   }
+});
+
+btnBackFromProfile.addEventListener("click", () => {
+  showProjectsView();
 });
 
 $("#form-change-password").addEventListener("submit", async (e) => {
@@ -509,7 +543,6 @@ btnLogout.addEventListener("click", async () => {
   localStorage.removeItem(STORAGE_PROJECT);
   setSessionPassword(null);
   showAuth();
-  showProfileView();
   setStatus("", "Готов");
 });
 

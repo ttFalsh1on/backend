@@ -88,6 +88,40 @@ body {
   gap: 0.75rem;
 }
 
+.header-avatar {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 2px solid rgba(245, 158, 66, 0.25);
+  border-radius: 50%;
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+
+.header-avatar:hover {
+  border-color: rgba(245, 158, 66, 0.5);
+  transform: scale(1.04);
+}
+
+.header-avatar.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.view-toolbar {
+  margin-bottom: 1rem;
+}
+
 .auth-screen {
   position: relative;
   z-index: 1;
@@ -132,6 +166,7 @@ body {
 .auth-form[hidden],
 .app-screen[hidden],
 #btn-logout[hidden],
+#btn-profile-avatar[hidden],
 [hidden] {
   display: none !important;
 }
@@ -145,6 +180,10 @@ html.has-session #app-screen {
 }
 
 html.has-session #btn-logout {
+  display: inline-flex !important;
+}
+
+html.has-session #btn-profile-avatar {
   display: inline-flex !important;
 }
 
@@ -272,7 +311,19 @@ html.has-session #btn-logout {
 
 .password-wrap input {
   width: 100%;
-  padding-right: 2.5rem;
+  padding-right: 2.75rem;
+}
+
+.password-wrap input::-ms-reveal,
+.password-wrap input::-ms-clear {
+  display: none;
+}
+
+.password-wrap input::-webkit-credentials-auto-fill-button,
+.password-wrap input::-webkit-strong-password-auto-fill-button {
+  display: none !important;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .password-wrap-inline input {
@@ -282,24 +333,38 @@ html.has-session #btn-logout {
 
 .pw-toggle {
   position: absolute;
-  right: 0.35rem;
-  display: flex;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2rem;
-  height: 2rem;
+  width: 1.75rem;
+  height: 1.75rem;
   padding: 0;
   border: none;
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
-  border-radius: 6px;
-  transition: color 0.15s, background 0.15s;
+  border-radius: 4px;
+  z-index: 2;
+  transition: color 0.15s;
 }
 
 .pw-toggle:hover {
-  color: var(--text);
-  background: rgba(255, 255, 255, 0.05);
+  color: var(--accent);
+}
+
+.pw-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.pw-icon {
+  display: block;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
 }
 
 .pw-icon-hide {

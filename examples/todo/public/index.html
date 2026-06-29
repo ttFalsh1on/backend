@@ -30,6 +30,9 @@
         <span class="status-dot"></span>
         <span class="status-text">…</span>
       </div>
+      <button type="button" class="header-avatar" id="btn-profile-avatar" hidden title="Профиль" aria-label="Профиль">
+        <span id="avatar-initials">?</span>
+      </button>
       <button type="button" class="btn btn-ghost" id="btn-logout" hidden>Выйти</button>
     </div>
   </header>
@@ -50,10 +53,7 @@
           <span class="field-label">Пароль</span>
           <div class="password-wrap">
             <input type="password" id="login-password" placeholder="••••••••" required autocomplete="current-password" />
-            <button type="button" class="pw-toggle" data-target="login-password" aria-label="Показать пароль">
-              <svg class="pw-icon pw-icon-show" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 5C7 5 2.73 8.11 1 12.5 2.73 16.89 7 20 12 20s9.27-3.11 11-7.5C21.27 8.11 17 5 12 5zm0 11a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>
-              <svg class="pw-icon pw-icon-hide" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 6.5c2.5 0 4.7 1 6.4 2.6l1.5-1.5 1.4 1.4-1.5 1.5c1.3 1.6 2.2 3.5 2.5 5.5l-2 .5c-.3-1.6-1-3.1-2-4.3-1.6 1.5-3.7 2.4-6.3 2.4-2.5 0-4.7-1-6.4-2.6L2.3 19.7.9 18.3l1.5-1.5C1.1 15.2.2 13.3 0 11.5l2-.5c.3 1.6 1 3.1 2 4.3 1.6-1.5 3.7-2.4 6-2.4zm0 7a3.5 3.5 0 0 0 3.5-3.5A3.5 3.5 0 0 0 12 10a3.5 3.5 0 0 0-3.5 3.5A3.5 3.5 0 0 0 12 13.5z"/></svg>
-            </button>
+            <button type="button" class="pw-toggle" data-target="login-password" aria-label="Показать пароль"></button>
           </div>
         </label>
         <button type="submit" class="btn btn-primary">Войти</button>
@@ -68,20 +68,14 @@
           <span class="field-label">Пароль</span>
           <div class="password-wrap">
             <input type="password" id="reg-password" placeholder="Мин. 6 символов" required minlength="6" autocomplete="new-password" />
-            <button type="button" class="pw-toggle" data-target="reg-password" aria-label="Показать пароль">
-              <svg class="pw-icon pw-icon-show" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 5C7 5 2.73 8.11 1 12.5 2.73 16.89 7 20 12 20s9.27-3.11 11-7.5C21.27 8.11 17 5 12 5zm0 11a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>
-              <svg class="pw-icon pw-icon-hide" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 6.5c2.5 0 4.7 1 6.4 2.6l1.5-1.5 1.4 1.4-1.5 1.5c1.3 1.6 2.2 3.5 2.5 5.5l-2 .5c-.3-1.6-1-3.1-2-4.3-1.6 1.5-3.7 2.4-6.3 2.4-2.5 0-4.7-1-6.4-2.6L2.3 19.7.9 18.3l1.5-1.5C1.1 15.2.2 13.3 0 11.5l2-.5c.3 1.6 1 3.1 2 4.3 1.6-1.5 3.7-2.4 6-2.4zm0 7a3.5 3.5 0 0 0 3.5-3.5A3.5 3.5 0 0 0 12 10a3.5 3.5 0 0 0-3.5 3.5A3.5 3.5 0 0 0 12 13.5z"/></svg>
-            </button>
+            <button type="button" class="pw-toggle" data-target="reg-password" aria-label="Показать пароль"></button>
           </div>
         </label>
         <label class="field">
           <span class="field-label">Повторить пароль</span>
           <div class="password-wrap">
             <input type="password" id="reg-password2" placeholder="Ещё раз" required minlength="6" autocomplete="new-password" />
-            <button type="button" class="pw-toggle" data-target="reg-password2" aria-label="Показать пароль">
-              <svg class="pw-icon pw-icon-show" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 5C7 5 2.73 8.11 1 12.5 2.73 16.89 7 20 12 20s9.27-3.11 11-7.5C21.27 8.11 17 5 12 5zm0 11a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>
-              <svg class="pw-icon pw-icon-hide" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 6.5c2.5 0 4.7 1 6.4 2.6l1.5-1.5 1.4 1.4-1.5 1.5c1.3 1.6 2.2 3.5 2.5 5.5l-2 .5c-.3-1.6-1-3.1-2-4.3-1.6 1.5-3.7 2.4-6.3 2.4-2.5 0-4.7-1-6.4-2.6L2.3 19.7.9 18.3l1.5-1.5C1.1 15.2.2 13.3 0 11.5l2-.5c.3 1.6 1 3.1 2 4.3 1.6-1.5 3.7-2.4 6-2.4zm0 7a3.5 3.5 0 0 0 3.5-3.5A3.5 3.5 0 0 0 12 10a3.5 3.5 0 0 0-3.5 3.5A3.5 3.5 0 0 0 12 13.5z"/></svg>
-            </button>
+            <button type="button" class="pw-toggle" data-target="reg-password2" aria-label="Показать пароль"></button>
           </div>
         </label>
         <label class="field">
@@ -94,12 +88,10 @@
   </main>
 
   <main class="layout app-screen" id="app-screen" hidden>
-    <nav class="app-nav" id="app-nav">
-      <button type="button" class="app-nav-tab active" data-view="profile">Профиль</button>
-      <button type="button" class="app-nav-tab" data-view="projects">Проекты</button>
-    </nav>
-
-    <section class="view-profile" id="view-profile">
+    <section class="view-profile" id="view-profile" hidden>
+      <div class="view-toolbar">
+        <button type="button" class="btn btn-ghost btn-back" id="btn-back-from-profile">← К проектам</button>
+      </div>
       <section class="card profile-card">
         <div class="card-head">
           <h2>Мой профиль</h2>
@@ -119,30 +111,21 @@
             <span class="field-label">Текущий пароль</span>
             <div class="password-wrap">
               <input type="password" id="pw-current" required autocomplete="current-password" />
-              <button type="button" class="pw-toggle" data-target="pw-current" aria-label="Показать пароль">
-                <svg class="pw-icon pw-icon-show" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 5C7 5 2.73 8.11 1 12.5 2.73 16.89 7 20 12 20s9.27-3.11 11-7.5C21.27 8.11 17 5 12 5zm0 11a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>
-                <svg class="pw-icon pw-icon-hide" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 6.5c2.5 0 4.7 1 6.4 2.6l1.5-1.5 1.4 1.4-1.5 1.5c1.3 1.6 2.2 3.5 2.5 5.5l-2 .5c-.3-1.6-1-3.1-2-4.3-1.6 1.5-3.7 2.4-6.3 2.4-2.5 0-4.7-1-6.4-2.6L2.3 19.7.9 18.3l1.5-1.5C1.1 15.2.2 13.3 0 11.5l2-.5c.3 1.6 1 3.1 2 4.3 1.6-1.5 3.7-2.4 6-2.4zm0 7a3.5 3.5 0 0 0 3.5-3.5A3.5 3.5 0 0 0 12 10a3.5 3.5 0 0 0-3.5 3.5A3.5 3.5 0 0 0 12 13.5z"/></svg>
-              </button>
+              <button type="button" class="pw-toggle" data-target="pw-current" aria-label="Показать пароль"></button>
             </div>
           </label>
           <label class="field">
             <span class="field-label">Новый пароль</span>
             <div class="password-wrap">
               <input type="password" id="pw-new" required minlength="6" autocomplete="new-password" />
-              <button type="button" class="pw-toggle" data-target="pw-new" aria-label="Показать пароль">
-                <svg class="pw-icon pw-icon-show" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 5C7 5 2.73 8.11 1 12.5 2.73 16.89 7 20 12 20s9.27-3.11 11-7.5C21.27 8.11 17 5 12 5zm0 11a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>
-                <svg class="pw-icon pw-icon-hide" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 6.5c2.5 0 4.7 1 6.4 2.6l1.5-1.5 1.4 1.4-1.5 1.5c1.3 1.6 2.2 3.5 2.5 5.5l-2 .5c-.3-1.6-1-3.1-2-4.3-1.6 1.5-3.7 2.4-6.3 2.4-2.5 0-4.7-1-6.4-2.6L2.3 19.7.9 18.3l1.5-1.5C1.1 15.2.2 13.3 0 11.5l2-.5c.3 1.6 1 3.1 2 4.3 1.6-1.5 3.7-2.4 6-2.4zm0 7a3.5 3.5 0 0 0 3.5-3.5A3.5 3.5 0 0 0 12 10a3.5 3.5 0 0 0-3.5 3.5A3.5 3.5 0 0 0 12 13.5z"/></svg>
-              </button>
+              <button type="button" class="pw-toggle" data-target="pw-new" aria-label="Показать пароль"></button>
             </div>
           </label>
           <label class="field">
             <span class="field-label">Повторить новый пароль</span>
             <div class="password-wrap">
               <input type="password" id="pw-new2" required minlength="6" autocomplete="new-password" />
-              <button type="button" class="pw-toggle" data-target="pw-new2" aria-label="Показать пароль">
-                <svg class="pw-icon pw-icon-show" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 5C7 5 2.73 8.11 1 12.5 2.73 16.89 7 20 12 20s9.27-3.11 11-7.5C21.27 8.11 17 5 12 5zm0 11a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>
-                <svg class="pw-icon pw-icon-hide" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 6.5c2.5 0 4.7 1 6.4 2.6l1.5-1.5 1.4 1.4-1.5 1.5c1.3 1.6 2.2 3.5 2.5 5.5l-2 .5c-.3-1.6-1-3.1-2-4.3-1.6 1.5-3.7 2.4-6.3 2.4-2.5 0-4.7-1-6.4-2.6L2.3 19.7.9 18.3l1.5-1.5C1.1 15.2.2 13.3 0 11.5l2-.5c.3 1.6 1 3.1 2 4.3 1.6-1.5 3.7-2.4 6-2.4zm0 7a3.5 3.5 0 0 0 3.5-3.5A3.5 3.5 0 0 0 12 10a3.5 3.5 0 0 0-3.5 3.5A3.5 3.5 0 0 0 12 13.5z"/></svg>
-              </button>
+              <button type="button" class="pw-toggle" data-target="pw-new2" aria-label="Показать пароль"></button>
             </div>
           </label>
           <button type="submit" class="btn btn-primary">Сохранить пароль</button>
@@ -150,7 +133,7 @@
       </section>
     </section>
 
-    <section class="view-projects" id="view-projects" hidden>
+    <section class="view-projects" id="view-projects">
       <section class="card projects-card">
         <div class="card-head">
           <h2>Мои проекты</h2>
