@@ -32,6 +32,8 @@ export const list = query({
       name: row.name,
       kind: row.kind,
       args: parseFieldsJson(row.argsJson as string),
+      tableId: row.tableId ?? null,
+      operation: row.operation ?? null,
     }));
   },
 });

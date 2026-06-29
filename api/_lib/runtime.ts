@@ -1,6 +1,7 @@
 import { createRuntime, type FlexRuntime } from "@flex/core";
 import { schema } from "./todo/schema.js";
 import { resolveAuth } from "./todo/lib/resolveAuth.js";
+import { executeDynamic } from "./todo/lib/dynamicEngine.js";
 import * as authFns from "./todo/functions/auth.js";
 import * as projectFns from "./todo/functions/projects.js";
 import * as tableFns from "./todo/functions/tables.js";
@@ -15,6 +16,8 @@ async function initRuntime(): Promise<FlexRuntime> {
   const rt = createRuntime(db, {
     schema,
     auth: (opts) => resolveAuth(db, opts),
+    onUnknownFunction: (path, args, options, rt) =>
+      executeDynamic(rt, path, args, options),
   });
   rt.registerModule("auth", authFns);
   rt.registerModule("projects", projectFns);

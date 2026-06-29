@@ -15,6 +15,12 @@ export interface FlexBackendOptions {
   dbPath: string;
   schema: SchemaDefinition;
   auth?: (options: ExecuteOptions) => Promise<AuthContext | null>;
+  onUnknownFunction?: (
+    path: string,
+    args: Record<string, unknown>,
+    options: ExecuteOptions,
+    runtime: FlexRuntime
+  ) => Promise<{ value: unknown; tablesWritten: string[] }>;
 }
 
 export interface FunctionModule {
@@ -26,16 +32,18 @@ export class FlexRuntime {
   private db: RuntimeDb;
   private functions = new Map<string, RegisteredFunction>();
   private authFn?: FlexBackendOptions["auth"];
+  private onUnknownFunction?: FlexBackendOptions["onUnknownFunction"];
   private scheduled: Array<{
     runAt: number;
     mutation: string;
     args: Record<string, unknown>;
   }> = [];
 
-  constructor(db: RuntimeDb, options: Pick<FlexBackendOptions, "schema" | "auth">) {
+  constructor(db: RuntimeDb, options: Pick<FlexBackendOptions, "schema" | "auth" | "onUnknownFunction">) {
     this.db = db;
     this.schema = options.schema;
     this.authFn = options.auth;
+    this.onUnknownFunction = options.onUnknownFunction;
   }
 
   registerModule(modulePath: string, mod: FunctionModule): void {
@@ -76,6 +84,14 @@ export class FlexRuntime {
   ): Promise<{ value: unknown; tablesWritten: string[] }> {
     const fn = this.functions.get(path);
     if (!fn) {
+      if (this.onUnknownFunction) {
+        return this.onUnknownFunction(
+          path,
+          args,
+          options ?? {},
+          this
+        );
+      }
       throw new Error(`Function not found: ${path}`);
     }
 
@@ -172,7 +188,7 @@ export class FlexRuntime {
 
 export function createRuntime(
   db: RuntimeDb,
-  options: Pick<FlexBackendOptions, "schema" | "auth">
+  options: Pick<FlexBackendOptions, "schema" | "auth" | "onUnknownFunction">
 ): FlexRuntime {
   return new FlexRuntime(db, options);
 }

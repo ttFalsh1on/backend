@@ -42,7 +42,17 @@ export const schema = defineSchema({
     name: v.string(),
     kind: v.string(),
     argsJson: v.string(),
+    tableId: v.optional(v.string()),
+    operation: v.optional(v.string()),
   })
     .index("by_project", ["projectId"])
     .index("by_project_name", ["projectId", "name"]),
+
+  dynamicRows: defineTable({
+    projectId: v.id("projects"),
+    tableId: v.id("projectTables"),
+    dataJson: v.string(),
+  })
+    .index("by_table", ["tableId"])
+    .index("by_project", ["projectId"]),
 });

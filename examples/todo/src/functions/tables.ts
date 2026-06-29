@@ -11,6 +11,12 @@ import {
   validateFields,
   type FieldDef,
 } from "../lib/fieldTypes.js";
+import {
+  provisionTableFunctions,
+  deleteRowsForTable,
+  deleteFunctionsForTable,
+  tableFnPath,
+} from "../lib/dynamicEngine.js";
 
 const fieldValidator = v.object({
   name: v.string(),
@@ -34,6 +40,9 @@ export const list = query({
       _id: row._id,
       name: row.name,
       fields: parseFieldsJson(row.fieldsJson as string),
+      listPath: tableFnPath(row.name as string, "list"),
+      createPath: tableFnPath(row.name as string, "create"),
+      removePath: tableFnPath(row.name as string, "remove"),
     }));
   },
 });
@@ -73,7 +82,23 @@ export const create = mutation({
       fieldsJson: serializeFields(normalized),
     });
 
-    return { _id: id, name: tableName, fields: normalized };
+    const fnPaths = await provisionTableFunctions(
+      ctx,
+      pid,
+      id,
+      tableName,
+      normalized
+    );
+
+    return {
+      _id: id,
+      name: tableName,
+      fields: normalized,
+      functions: fnPaths,
+      listPath: tableFnPath(tableName, "list"),
+      createPath: tableFnPath(tableName, "create"),
+      removePath: tableFnPath(tableName, "remove"),
+    };
   },
 });
 
@@ -86,7 +111,10 @@ export const remove = mutation({
     if (!row) throw new Error("Таблица не найдена");
 
     await assertProjectMember(ctx, row.projectId as string, userId);
-    await ctx.db.delete("projectTables", docId);
+    const tableId = docId;
+    await deleteRowsForTable(ctx, tableId);
+    await deleteFunctionsForTable(ctx, tableId);
+    await ctx.db.delete("projectTables", tableId);
     return { ok: true };
   },
 });

@@ -823,6 +823,77 @@ html.has-session #btn-profile-avatar {
   font-size: 0.75rem;
 }
 
+.schema-paths {
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.schema-paths code {
+  font-size: 0.72rem;
+}
+
+.schema-hint {
+  margin-bottom: 0.75rem;
+  font-size: 0.8rem;
+}
+
+.schema-item-actions {
+  display: flex;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.data-select {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: inherit;
+}
+
+.data-rows {
+  list-style: none;
+  margin: 0.75rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.data-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+.data-row-id {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.data-row-body {
+  flex: 1;
+  color: var(--text);
+}
+
+.data-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-top: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
 .kind-tag {
   font-family: var(--mono);
   font-size: 0.65rem;

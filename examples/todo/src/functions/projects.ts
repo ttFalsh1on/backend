@@ -4,6 +4,7 @@ import {
   assertProjectMember,
   slugify,
 } from "../lib/access.js";
+import { deleteRowsForProject } from "../lib/dynamicEngine.js";
 
 export const list = query({
   args: {},
@@ -83,6 +84,8 @@ export const remove = mutation({
     const p = await ctx.db.get("projects", id);
     if (!p) throw new Error("Проект не найден");
     if (p.ownerId !== userId) throw new Error("Только владелец может удалить проект");
+
+    await deleteRowsForProject(ctx, id);
 
     const tables = await ctx.db
       .query("projectTables")

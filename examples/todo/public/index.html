@@ -179,19 +179,24 @@
             <h3>Функции</h3>
             <span class="badge" id="fn-count">0</span>
           </div>
-          <form id="form-new-fn" class="schema-form">
-            <div class="fn-row">
-              <input type="text" id="fn-name" placeholder="Имя функции" required />
-              <select id="fn-kind">
-                <option value="query">query</option>
-                <option value="mutation">mutation</option>
-              </select>
-            </div>
-            <div class="field-rows" id="fn-args"></div>
-            <button type="button" class="btn btn-ghost btn-sm" id="btn-add-fn-arg">+ Аргумент</button>
-            <button type="submit" class="btn btn-primary">Добавить функцию</button>
-          </form>
+          <p class="schema-hint muted">Создаются автоматически для каждой таблицы: <code>имя:list</code>, <code>имя:create</code> и др.</p>
           <ul class="schema-list" id="fn-list"></ul>
+        </div>
+
+        <div class="schema-block">
+          <div class="card-head">
+            <h3>Данные</h3>
+          </div>
+          <div class="data-panel">
+            <label class="field">
+              <span class="field-label">Таблица</span>
+              <select id="data-table-select" class="data-select">
+                <option value="">— выберите таблицу —</option>
+              </select>
+            </label>
+            <ul class="data-rows" id="data-rows"></ul>
+            <form id="form-new-row" class="data-form" hidden></form>
+          </div>
         </div>
       </section>
     </section>

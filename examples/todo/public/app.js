@@ -31,10 +31,12 @@ const activeProjectTitle = $("#active-project-title");
 const activeProjectSlug = $("#active-project-slug");
 const tableList = $("#table-list");
 const fnList = $("#fn-list");
+const dataTableSelect = $("#data-table-select");
+const dataRows = $("#data-rows");
+const formNewRow = $("#form-new-row");
 const tableCount = $("#table-count");
 const fnCount = $("#fn-count");
 const tableFields = $("#table-fields");
-const fnArgs = $("#fn-args");
 
 let state = {
   token: localStorage.getItem(STORAGE_TOKEN),
@@ -374,7 +376,7 @@ function renderSchema() {
 
   tableList.innerHTML =
     state.tables.length === 0
-      ? '<li class="schema-empty muted">Нет таблиц</li>'
+      ? '<li class="schema-empty muted">Нет таблиц — создайте первую</li>'
       : state.tables
           .map(
             (t) => `
@@ -382,27 +384,109 @@ function renderSchema() {
         <div>
           <strong>${escapeHtml(t.name)}</strong>
           <p class="schema-fields">${renderFieldDefs(t.fields)}</p>
+          <p class="schema-paths"><code>${escapeHtml(t.listPath)}</code> · <code>${escapeHtml(t.createPath)}</code></p>
         </div>
-        <button type="button" class="btn btn-ghost" data-action="delete-table">×</button>
+        <div class="schema-item-actions">
+          <button type="button" class="btn btn-ghost btn-sm" data-action="view-data">Данные</button>
+          <button type="button" class="btn btn-ghost" data-action="delete-table">×</button>
+        </div>
       </li>`
           )
           .join("");
 
+  dataTableSelect.innerHTML =
+    '<option value="">— выберите таблицу —</option>' +
+    state.tables
+      .map(
+        (t) =>
+          `<option value="${escapeHtml(t._id)}">${escapeHtml(t.name)}</option>`
+      )
+      .join("");
+
   fnList.innerHTML =
     state.functions.length === 0
-      ? '<li class="schema-empty muted">Нет функций</li>'
+      ? '<li class="schema-empty muted">Создайте таблицу — функции появятся автоматически</li>'
       : state.functions
           .map(
             (f) => `
       <li class="schema-item" data-id="${escapeHtml(f._id)}" data-kind="fn">
         <div>
-          <strong><span class="kind-tag kind-${escapeHtml(f.kind)}">${escapeHtml(f.kind)}</span> ${escapeHtml(f.name)}</strong>
+          <strong><span class="kind-tag kind-${escapeHtml(f.kind)}">${escapeHtml(f.kind)}</span> <code>${escapeHtml(f.name)}</code></strong>
           <p class="schema-fields">${renderFieldDefs(f.args)}</p>
         </div>
-        <button type="button" class="btn btn-ghost" data-action="delete-fn">×</button>
       </li>`
           )
           .join("");
+
+  renderDataPanel();
+}
+
+function getActiveTable() {
+  const id = dataTableSelect.value || state.tables[0]?._id;
+  return state.tables.find((t) => t._id === id);
+}
+
+function renderNewRowForm(table) {
+  if (!table?.fields?.length) {
+    formNewRow.hidden = true;
+    formNewRow.innerHTML = "";
+    return;
+  }
+  formNewRow.hidden = false;
+  formNewRow.innerHTML = `
+    ${table.fields
+      .map(
+        (f) => `
+      <label class="field">
+        <span class="field-label">${escapeHtml(f.name)} (${escapeHtml(f.type)})</span>
+        <input type="${f.type === "number" ? "number" : "text"}" name="${escapeHtml(f.name)}" required />
+      </label>`
+      )
+      .join("")}
+    <button type="submit" class="btn btn-primary btn-sm">Добавить запись</button>`;
+}
+
+async function loadTableData() {
+  const table = getActiveTable();
+  if (!table?.listPath) {
+    dataRows.innerHTML = "";
+    formNewRow.hidden = true;
+    return;
+  }
+  dataRows.innerHTML = '<li class="schema-empty muted">Загрузка…</li>';
+  try {
+    const rows = await httpRun(table.listPath, {});
+    if (!rows.length) {
+      dataRows.innerHTML = '<li class="schema-empty muted">Пусто</li>';
+    } else {
+      dataRows.innerHTML = rows
+        .map(
+          (row) => `
+        <li class="data-row">
+          <code class="data-row-id">${escapeHtml(String(row._id))}</code>
+          <span class="data-row-body">${escapeHtml(
+            table.fields
+              .map((f) => `${f.name}: ${row[f.name] ?? "—"}`)
+              .join(" · ")
+          )}</span>
+          <button type="button" class="btn btn-ghost btn-sm" data-action="delete-row" data-id="${escapeHtml(String(row._id))}">×</button>
+        </li>`
+        )
+        .join("");
+    }
+    renderNewRowForm(table);
+  } catch (err) {
+    dataRows.innerHTML = `<li class="schema-empty muted">${escapeHtml(err.message)}</li>`;
+  }
+}
+
+function renderDataPanel() {
+  if (dataTableSelect.value) {
+    void loadTableData();
+  } else {
+    dataRows.innerHTML = '<li class="schema-empty muted">Выберите таблицу</li>';
+    formNewRow.hidden = true;
+  }
 }
 
 async function loadSchema() {
@@ -626,19 +710,48 @@ $("#btn-add-table-field").addEventListener("click", () => {
   tableFields.insertAdjacentHTML("beforeend", fieldRowHtml("table"));
 });
 
-$("#btn-add-fn-arg").addEventListener("click", () => {
-  fnArgs.insertAdjacentHTML("beforeend", fieldRowHtml("fn"));
-});
-
 tableFields.addEventListener("click", (e) => {
   if (e.target.closest("[data-remove-row]")) {
     e.target.closest(".field-row")?.remove();
   }
 });
 
-fnArgs.addEventListener("click", (e) => {
-  if (e.target.closest("[data-remove-row]")) {
-    e.target.closest(".field-row")?.remove();
+dataTableSelect.addEventListener("change", () => renderDataPanel());
+
+formNewRow.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const table = getActiveTable();
+  if (!table?.createPath) return;
+  const args = {};
+  for (const f of table.fields) {
+    const input = formNewRow.querySelector(`[name="${f.name}"]`);
+    if (!input) continue;
+    let val = input.value;
+    if (f.type === "number") val = Number(val);
+    if (f.type === "boolean") val = val === "true" || val === "1";
+    args[f.name] = val;
+  }
+  try {
+    await httpRun(table.createPath, args);
+    await loadTableData();
+    formNewRow.reset();
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
+dataRows.addEventListener("click", async (e) => {
+  const btn = e.target.closest("[data-action='delete-row']");
+  if (!btn) return;
+  const table = getActiveTable();
+  if (!table) return;
+  const removePath = table.removePath;
+  if (!confirm("Удалить запись?")) return;
+  try {
+    await httpRun(removePath, { id: btn.dataset.id });
+    await loadTableData();
+  } catch (err) {
+    alert(err.message);
   }
 });
 
@@ -664,44 +777,24 @@ $("#form-new-table").addEventListener("submit", async (e) => {
   }
 });
 
-$("#form-new-fn").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const args = readFieldRows(fnArgs, "fn");
-  try {
-    await httpRun("projectFns:create", {
-      name: $("#fn-name").value.trim(),
-      kind: $("#fn-kind").value,
-      args,
-      projectId: state.activeProjectId,
-    });
-    $("#fn-name").value = "";
-    fnArgs.innerHTML = "";
-    await loadSchema();
-  } catch (err) {
-    alert(err.message);
-  }
-});
-
 tableList.addEventListener("click", async (e) => {
+  const dataBtn = e.target.closest("[data-action='view-data']");
+  if (dataBtn) {
+    const item = dataBtn.closest(".schema-item");
+    if (item) {
+      dataTableSelect.value = item.dataset.id;
+      renderDataPanel();
+      dataTableSelect.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+    return;
+  }
+
   const btn = e.target.closest("[data-action='delete-table']");
   if (!btn) return;
   const id = btn.closest(".schema-item")?.dataset.id;
-  if (!id || !confirm("Удалить таблицу?")) return;
+  if (!id || !confirm("Удалить таблицу и все данные?")) return;
   try {
     await httpRun("tables:remove", { id });
-    await loadSchema();
-  } catch (err) {
-    alert(err.message);
-  }
-});
-
-fnList.addEventListener("click", async (e) => {
-  const btn = e.target.closest("[data-action='delete-fn']");
-  if (!btn) return;
-  const id = btn.closest(".schema-item")?.dataset.id;
-  if (!id || !confirm("Удалить функцию?")) return;
-  try {
-    await httpRun("projectFns:remove", { id });
     await loadSchema();
   } catch (err) {
     alert(err.message);

@@ -5,6 +5,7 @@ import { createRuntime } from "@flex/core";
 import { createFlexServer } from "@flex/server";
 import { schema } from "./schema.js";
 import { resolveAuth } from "./lib/resolveAuth.js";
+import { executeDynamic } from "./lib/dynamicEngine.js";
 import * as authFns from "./functions/auth.js";
 import * as projectFns from "./functions/projects.js";
 import * as tableFns from "./functions/tables.js";
@@ -17,6 +18,8 @@ const db = createDatabase(dbPath, schema);
 const runtime = createRuntime(db, {
   schema,
   auth: (opts) => resolveAuth(db, opts),
+  onUnknownFunction: (path, args, options, rt) =>
+    executeDynamic(rt, path, args, options),
 });
 
 runtime.registerModule("auth", authFns);
