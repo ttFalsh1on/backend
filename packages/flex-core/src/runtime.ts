@@ -171,7 +171,7 @@ export class FlexRuntime {
 }
 
 export function createRuntime(
-  db: FlexDatabase,
+  db: RuntimeDb,
   options: Pick<FlexBackendOptions, "schema" | "auth">
 ): FlexRuntime {
   return new FlexRuntime(db, options);

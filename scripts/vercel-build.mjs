@@ -1,11 +1,18 @@
-import { writeFileSync, mkdirSync } from "node:fs";
+import { writeFileSync, mkdirSync, cpSync, rmSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const publicDir = join(__dirname, "..", "examples", "todo", "public");
+const root = join(__dirname, "..");
+const publicDir = join(root, "examples", "todo", "public");
+const todoDest = join(root, "api", "_lib", "todo");
+const todoSrc = join(root, "examples", "todo", "src");
 
 mkdirSync(publicDir, { recursive: true });
+
+rmSync(todoDest, { recursive: true, force: true });
+cpSync(todoSrc, todoDest, { recursive: true });
+console.log("Vercel build: copied examples/todo/src -> api/_lib/todo");
 
 const apiBase = process.env.FLEX_PUBLIC_API_URL ?? "";
 const httpOnly = process.env.VERCEL === "1";

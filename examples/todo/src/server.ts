@@ -1,6 +1,7 @@
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { createDatabase, createRuntime } from "@flex/core";
+import { createDatabase } from "@flex/core/sqlite";
+import { createRuntime } from "@flex/core";
 import { createFlexServer } from "@flex/server";
 import { schema } from "./schema.js";
 import { resolveAuth } from "./lib/resolveAuth.js";

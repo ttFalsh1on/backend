@@ -10,6 +10,12 @@
       "import": "./dist/index.js",
       "require": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./sqlite": {
+      "types": "./dist/db.d.ts",
+      "import": "./dist/db.js",
+      "require": "./dist/db.js",
+      "default": "./dist/db.js"
     }
   },
   "scripts": {

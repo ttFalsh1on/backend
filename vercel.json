@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "name": "flex-backend",
   "version": 2,
-  "installCommand": "npm install && npm rebuild better-sqlite3",
+  "installCommand": "npm install",
   "buildCommand": "npm run build:vercel",
   "outputDirectory": "examples/todo/public",
   "framework": null,

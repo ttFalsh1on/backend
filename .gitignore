@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .vercel
+api/_lib/todo/
 *.db
 *.db-journal
 .env
