@@ -7,13 +7,20 @@ const BLOB_KEY = "flex-store.json";
 
 type StoreData = Record<string, Record<string, { data: Record<string, unknown>; creationTime: number }>>;
 
+function blobEnabled(): boolean {
+  return Boolean(process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID);
+}
+
+const BLOB_ACCESS = "private" as const;
+
 async function loadBlobStore(): Promise<StoreData> {
-  const { head } = await import("@vercel/blob");
+  const { get } = await import("@vercel/blob");
   try {
-    const meta = await head(BLOB_KEY);
-    const res = await fetch(meta.url);
-    if (!res.ok) return {};
-    return (await res.json()) as StoreData;
+    const result = await get(BLOB_KEY, { access: BLOB_ACCESS });
+    if (result?.statusCode !== 200 || !result.stream) return {};
+    const text = await new Response(result.stream).text();
+    if (!text.trim()) return {};
+    return JSON.parse(text) as StoreData;
   } catch {
     return {};
   }
@@ -22,9 +29,10 @@ async function loadBlobStore(): Promise<StoreData> {
 async function saveBlobStore(json: string): Promise<void> {
   const { put } = await import("@vercel/blob");
   await put(BLOB_KEY, json, {
-    access: "public",
+    access: BLOB_ACCESS,
     addRandomSuffix: false,
     allowOverwrite: true,
+    contentType: "application/json",
   });
 }
 
@@ -35,7 +43,7 @@ export async function createApiDatabase(
     process.env.FLEX_DB_PATH ?? join("/tmp", "flex-store.json");
   mkdirSync(dirname(jsonPath), { recursive: true });
 
-  if (process.env.BLOB_READ_WRITE_TOKEN) {
+  if (blobEnabled()) {
     const initial = await loadBlobStore();
     writeFileSync(jsonPath, JSON.stringify(initial), "utf8");
     return createJsonDatabase(jsonPath, schema, {
