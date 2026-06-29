@@ -45,18 +45,31 @@ class IndexRangeBuilderImpl implements IndexRangeBuilder {
 type DocRow = { data: DocumentValue; creationTime: number };
 type StoreData = Record<string, Record<string, DocRow>>;
 
+export interface JsonDatabaseOptions {
+  initialStore?: StoreData;
+  onPersist?: (json: string) => void | Promise<void>;
+}
+
 /** JSON-файл вместо SQLite — для Vercel serverless */
 export class JsonFlexDatabase implements DatabaseReader {
   private schema: SchemaDefinition;
   private filePath: string;
   private store: StoreData = {};
   private writeTables = new Set<string>();
+  private onPersist?: JsonDatabaseOptions["onPersist"];
 
-  constructor(filePath: string, schema: SchemaDefinition) {
+  constructor(
+    filePath: string,
+    schema: SchemaDefinition,
+    options?: JsonDatabaseOptions
+  ) {
     this.filePath = filePath;
     this.schema = schema;
+    this.onPersist = options?.onPersist;
     mkdirSync(dirname(filePath), { recursive: true });
-    if (existsSync(filePath)) {
+    if (options?.initialStore) {
+      this.store = options.initialStore;
+    } else if (existsSync(filePath)) {
       try {
         this.store = JSON.parse(readFileSync(filePath, "utf8")) as StoreData;
       } catch {
@@ -66,9 +79,13 @@ export class JsonFlexDatabase implements DatabaseReader {
   }
 
   private persist(): void {
+    const json = JSON.stringify(this.store);
     const tmp = `${this.filePath}.tmp`;
-    writeFileSync(tmp, JSON.stringify(this.store), "utf8");
+    writeFileSync(tmp, json, "utf8");
     renameSync(tmp, this.filePath);
+    if (this.onPersist) {
+      void this.onPersist(json);
+    }
   }
 
   getWrittenTables(): string[] {
@@ -245,7 +262,8 @@ export class JsonFlexDatabase implements DatabaseReader {
 
 export function createJsonDatabase(
   filePath: string,
-  schema: SchemaDefinition
+  schema: SchemaDefinition,
+  options?: JsonDatabaseOptions
 ): JsonFlexDatabase {
-  return new JsonFlexDatabase(filePath, schema);
+  return new JsonFlexDatabase(filePath, schema, options);
 }

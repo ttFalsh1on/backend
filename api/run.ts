@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { setCors } from "./_lib/cors.js";
 import { getRuntime } from "./_lib/runtime.js";
+import { apiErrorStatus } from "./_lib/errors.js";
 
 export default async function handler(
   req: VercelRequest,
@@ -35,15 +36,14 @@ export default async function handler(
     const projectId =
       typeof projectHeader === "string" ? projectHeader : null;
 
-    const { value } = await getRuntime().execute(path, args, {
+    const { value } = await (await getRuntime()).execute(path, args, {
       token,
       projectId,
     });
     res.status(200).json({ value });
   } catch (err) {
     console.error("API /run error:", err);
-    res.status(500).json({
-      error: err instanceof Error ? err.message : String(err),
-    });
+    const message = err instanceof Error ? err.message : String(err);
+    res.status(apiErrorStatus(message)).json({ error: message });
   }
 }

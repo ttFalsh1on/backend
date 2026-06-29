@@ -320,7 +320,13 @@ $("#form-login").addEventListener("submit", async (e) => {
     localStorage.setItem(STORAGE_TOKEN, state.token);
     await loadMe();
   } catch (err) {
-    alert(err.message);
+    const msg = err.message || "Ошибка входа";
+    if (msg.includes("не найден") || msg.includes("зарегистрируйтесь")) {
+      switchAuthTab("register");
+      setStatus("auth", msg);
+      return;
+    }
+    alert(msg);
   }
 });
 
@@ -522,9 +528,10 @@ fetchWithTimeout(apiUrl("/api/health"))
         localStorage.removeItem(STORAGE_PROJECT);
         state.token = null;
         state.activeProjectId = null;
+        document.documentElement.classList.remove("has-session");
         showAuth();
         switchAuthTab("login");
-        setStatus("", "Войдите снова");
+        setStatus("", "Сессия истекла — войдите снова");
       }
     }
   })

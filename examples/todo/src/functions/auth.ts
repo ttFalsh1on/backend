@@ -49,8 +49,11 @@ export const login = mutation({
       .withIndex("by_email", (q) => q.eq("email", normalized))
       .first();
 
-    if (!user || !verifyPassword(password, user.passwordHash as string)) {
-      throw new Error("Неверный email или пароль");
+    if (!user) {
+      throw new Error("Аккаунт не найден. Сначала зарегистрируйтесь.");
+    }
+    if (!verifyPassword(password, user.passwordHash as string)) {
+      throw new Error("Неверный пароль");
     }
 
     const token = createSessionToken();

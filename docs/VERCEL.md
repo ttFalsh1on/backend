@@ -7,7 +7,18 @@
 | Корень `/` | UI: вход, проекты, задачи (`examples/todo/public`) |
 | API | Serverless Functions в `/api` |
 | WebSocket | **Нет** (UI использует HTTP polling) |
-| База | JSON в `/tmp` (данные могут сбрасываться) |
+| База | **Vercel Blob** (если подключён) или JSON в `/tmp` |
+
+## Важно: хранение аккаунтов
+
+Без **Vercel Blob** каждый запрос может попасть на другой сервер — регистрация и вход **не сохраняются**.
+
+**Один раз в Vercel Dashboard:**
+1. Проект **flex-backend** → **Storage** → **Create Database** → **Blob**
+2. Подключите Blob к проекту (появится `BLOB_READ_WRITE_TOKEN`)
+3. Redeploy
+
+После этого регистрация и вход работают стабильно.
 
 ---
 
@@ -17,7 +28,7 @@
 |------|----------|
 | **Build Command** | `npm run build:vercel` |
 | **Output Directory** | `examples/todo/public` |
-| **Install Command** | `npm install && npm rebuild better-sqlite3` |
+| **Install Command** | `npm install` |
 
 ---
 
