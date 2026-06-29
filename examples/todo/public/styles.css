@@ -160,7 +160,8 @@ html.has-session #btn-logout {
 }
 
 .auth-form input,
-.auth-form select {
+.auth-form select,
+.profile-form input {
   padding: 0.75rem 1rem;
   background: var(--bg);
   border: 1px solid var(--border);
@@ -230,6 +231,148 @@ html.has-session #btn-logout {
   margin-top: 0.75rem;
   font-size: 0.85rem;
   color: var(--text-muted);
+}
+
+.app-nav {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.app-nav-tab {
+  flex: 1;
+  max-width: 160px;
+  padding: 0.55rem 1rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.9rem;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.app-nav-tab:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.app-nav-tab.active {
+  background: var(--accent-dim);
+  border-color: rgba(245, 158, 66, 0.35);
+  color: var(--accent);
+}
+
+.password-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-wrap input {
+  width: 100%;
+  padding-right: 2.5rem;
+}
+
+.password-wrap-inline input {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+}
+
+.pw-toggle {
+  position: absolute;
+  right: 0.35rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.pw-toggle:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.pw-icon-hide {
+  display: none;
+}
+
+.pw-toggle.is-visible .pw-icon-show {
+  display: none;
+}
+
+.pw-toggle.is-visible .pw-icon-hide {
+  display: block;
+}
+
+.profile-details {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 0.5rem;
+}
+
+.profile-row {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.profile-row dt {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.profile-row dd {
+  font-size: 0.95rem;
+  word-break: break-word;
+}
+
+.profile-password-input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 0.5rem 2.5rem 0.5rem 0.75rem;
+  font-family: inherit;
+}
+
+.profile-password-input[readonly] {
+  cursor: default;
+}
+
+.profile-hint {
+  margin-top: 1rem;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin-top: 0.5rem;
+}
+
+.profile-password-card {
+  margin-top: 1rem;
+}
+
+.view-profile {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
 .logo {

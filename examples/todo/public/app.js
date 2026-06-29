@@ -4,6 +4,7 @@ const FETCH_TIMEOUT_MS = 12000;
 
 const STORAGE_TOKEN = "flex_token";
 const STORAGE_PROJECT = "flex_project_id";
+const STORAGE_PASSWORD = "flex_password";
 
 const FIELD_TYPES = ["string", "number", "boolean", "id"];
 
@@ -14,7 +15,10 @@ const appScreen = $("#app-screen");
 const statusEl = $("#status");
 const statusText = statusEl.querySelector(".status-text");
 const btnLogout = $("#btn-logout");
-const userLine = $("#user-line");
+const appNav = $("#app-nav");
+const viewProfile = $("#view-profile");
+const profileDetails = $("#profile-details");
+const profilePasswordHint = $("#profile-password-hint");
 const projectList = $("#project-list");
 const projectCount = $("#project-count");
 const projectsEmpty = $("#projects-empty");
@@ -150,14 +154,118 @@ function renderFieldDefs(fields) {
     .join(", ");
 }
 
+function setSessionPassword(password) {
+  if (password) {
+    sessionStorage.setItem(STORAGE_PASSWORD, password);
+  } else {
+    sessionStorage.removeItem(STORAGE_PASSWORD);
+  }
+}
+
+function getSessionPassword() {
+  try {
+    return sessionStorage.getItem(STORAGE_PASSWORD) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+function initPasswordToggles(root = document) {
+  root.querySelectorAll(".pw-toggle").forEach((btn) => {
+    if (btn.dataset.bound) return;
+    btn.dataset.bound = "1";
+    btn.addEventListener("click", () => {
+      const input = document.getElementById(btn.dataset.target);
+      if (!input) return;
+      const show = input.type === "password";
+      input.type = show ? "text" : "password";
+      btn.classList.toggle("is-visible", show);
+      btn.setAttribute("aria-label", show ? "Скрыть пароль" : "Показать пароль");
+    });
+  });
+}
+
+function setActiveNavTab(view) {
+  document.querySelectorAll(".app-nav-tab").forEach((tab) => {
+    tab.classList.toggle("active", tab.dataset.view === view);
+  });
+}
+
+function renderProfile() {
+  const user = state.user;
+  if (!user) {
+    profileDetails.innerHTML = "";
+    return;
+  }
+
+  const password = getSessionPassword();
+  const passwordValue = password || "••••••••";
+  const passwordMissing = !password;
+
+  profilePasswordHint.hidden = !passwordMissing;
+
+  profileDetails.innerHTML = `
+    <div class="profile-row">
+      <dt>ID</dt>
+      <dd><code>${escapeHtml(user._id)}</code></dd>
+    </div>
+    <div class="profile-row">
+      <dt>Имя</dt>
+      <dd>${escapeHtml(user.name)}</dd>
+    </div>
+    <div class="profile-row">
+      <dt>Почта</dt>
+      <dd>${escapeHtml(user.email)}</dd>
+    </div>
+    <div class="profile-row">
+      <dt>Пароль</dt>
+      <dd>
+        <div class="password-wrap password-wrap-inline">
+          <input
+            type="password"
+            id="profile-password-display"
+            class="profile-password-input"
+            value="${escapeHtml(passwordValue)}"
+            readonly
+            ${passwordMissing ? 'placeholder="Войдите снова, чтобы увидеть"' : ""}
+          />
+          <button type="button" class="pw-toggle" data-target="profile-password-display" aria-label="Показать пароль">
+            <svg class="pw-icon pw-icon-show" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 5C7 5 2.73 8.11 1 12.5 2.73 16.89 7 20 12 20s9.27-3.11 11-7.5C21.27 8.11 17 5 12 5zm0 11a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>
+            <svg class="pw-icon pw-icon-hide" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 6.5c2.5 0 4.7 1 6.4 2.6l1.5-1.5 1.4 1.4-1.5 1.5c1.3 1.6 2.2 3.5 2.5 5.5l-2 .5c-.3-1.6-1-3.1-2-4.3-1.6 1.5-3.7 2.4-6.3 2.4-2.5 0-4.7-1-6.4-2.6L2.3 19.7.9 18.3l1.5-1.5C1.1 15.2.2 13.3 0 11.5l2-.5c.3 1.6 1 3.1 2 4.3 1.6-1.5 3.7-2.4 6-2.4zm0 7a3.5 3.5 0 0 0 3.5-3.5A3.5 3.5 0 0 0 12 10a3.5 3.5 0 0 0-3.5 3.5A3.5 3.5 0 0 0 12 13.5z"/></svg>
+          </button>
+        </div>
+      </dd>
+    </div>
+    <div class="profile-row">
+      <dt>Проектов</dt>
+      <dd>${state.projects.length}</dd>
+    </div>`;
+
+  initPasswordToggles(profileDetails);
+}
+
+function showProfileView() {
+  viewProfile.hidden = false;
+  viewProjects.hidden = true;
+  viewProject.hidden = true;
+  appNav.hidden = false;
+  setActiveNavTab("profile");
+  renderProfile();
+}
+
 function showProjectsView() {
+  viewProfile.hidden = true;
   viewProjects.hidden = false;
   viewProject.hidden = true;
+  appNav.hidden = false;
+  setActiveNavTab("projects");
 }
 
 function showProjectView() {
+  viewProfile.hidden = true;
   viewProjects.hidden = true;
   viewProject.hidden = false;
+  appNav.hidden = true;
 }
 
 function renderProjects() {
@@ -282,7 +390,6 @@ async function loadMe() {
   const me = await httpRun("auth:me", {});
   state.user = me.user;
   state.projects = me.projects;
-  userLine.textContent = `${me.user.name} · ${me.user.email}`;
   renderProjects();
   showApp();
 
@@ -291,7 +398,7 @@ async function loadMe() {
   if (reopen) {
     await openProject(savedId);
   } else {
-    showProjectsView();
+    showProfileView();
   }
 }
 
@@ -311,13 +418,15 @@ document.querySelectorAll(".auth-tab").forEach((tab) => {
 
 $("#form-login").addEventListener("submit", async (e) => {
   e.preventDefault();
+  const password = $("#login-password").value;
   try {
     const res = await httpRun("auth:login", {
       email: $("#login-email").value.trim(),
-      password: $("#login-password").value,
+      password,
     });
     state.token = res.token;
     localStorage.setItem(STORAGE_TOKEN, state.token);
+    setSessionPassword(password);
     await loadMe();
   } catch (err) {
     const msg = err.message || "Ошибка входа";
@@ -347,7 +456,38 @@ $("#form-register").addEventListener("submit", async (e) => {
     });
     state.token = res.token;
     localStorage.setItem(STORAGE_TOKEN, state.token);
+    setSessionPassword(password);
     await loadMe();
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
+appNav.addEventListener("click", (e) => {
+  const tab = e.target.closest(".app-nav-tab");
+  if (!tab) return;
+  if (tab.dataset.view === "profile") {
+    showProfileView();
+  } else if (tab.dataset.view === "projects") {
+    showProjectsView();
+  }
+});
+
+$("#form-change-password").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const currentPassword = $("#pw-current").value;
+  const newPassword = $("#pw-new").value;
+  const newPassword2 = $("#pw-new2").value;
+  if (newPassword !== newPassword2) {
+    alert("Новые пароли не совпадают");
+    return;
+  }
+  try {
+    await httpRun("auth:changePassword", { currentPassword, newPassword });
+    setSessionPassword(newPassword);
+    $("#form-change-password").reset();
+    renderProfile();
+    alert("Пароль изменён");
   } catch (err) {
     alert(err.message);
   }
@@ -367,8 +507,9 @@ btnLogout.addEventListener("click", async () => {
   state.functions = [];
   localStorage.removeItem(STORAGE_TOKEN);
   localStorage.removeItem(STORAGE_PROJECT);
+  setSessionPassword(null);
   showAuth();
-  showProjectsView();
+  showProfileView();
   setStatus("", "Готов");
 });
 
@@ -418,6 +559,8 @@ btnBackProjects.addEventListener("click", () => {
   state.activeProjectId = null;
   localStorage.removeItem(STORAGE_PROJECT);
 });
+
+initPasswordToggles();
 
 $("#btn-add-table-field").addEventListener("click", () => {
   tableFields.insertAdjacentHTML("beforeend", fieldRowHtml("table"));
@@ -509,7 +652,6 @@ tableFields.insertAdjacentHTML("beforeend", fieldRowHtml("table"));
 
 if (state.token) {
   showApp();
-  userLine.textContent = "Загрузка…";
   setStatus("", "Загрузка…");
 } else {
   showAuth();

@@ -133,3 +133,28 @@ export const me = query({
     };
   },
 });
+
+export const changePassword = mutation({
+  args: {
+    currentPassword: v.string(),
+    newPassword: v.string(),
+  },
+  handler: async (ctx, { currentPassword, newPassword }) => {
+    const userId = requireAuth(ctx);
+    const user = await ctx.db.get("users", userId);
+    if (!user) throw new Error("Пользователь не найден");
+
+    if (!verifyPassword(currentPassword, user.passwordHash as string)) {
+      throw new Error("Неверный текущий пароль");
+    }
+    if (newPassword.length < 6) {
+      throw new Error("Новый пароль минимум 6 символов");
+    }
+
+    await ctx.db.patch("users", userId, {
+      passwordHash: hashPassword(newPassword),
+    });
+
+    return { ok: true };
+  },
+});
