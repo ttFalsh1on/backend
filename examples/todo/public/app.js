@@ -18,8 +18,11 @@ const userLine = $("#user-line");
 const projectList = $("#project-list");
 const projectCount = $("#project-count");
 const projectsEmpty = $("#projects-empty");
-const schemaSection = $("#schema-section");
+const viewProjects = $("#view-projects");
+const viewProject = $("#view-project");
+const btnBackProjects = $("#btn-back-projects");
 const activeProjectTitle = $("#active-project-title");
+const activeProjectSlug = $("#active-project-slug");
 const tableList = $("#table-list");
 const fnList = $("#fn-list");
 const tableCount = $("#table-count");
@@ -147,6 +150,16 @@ function renderFieldDefs(fields) {
     .join(", ");
 }
 
+function showProjectsView() {
+  viewProjects.hidden = false;
+  viewProject.hidden = true;
+}
+
+function showProjectView() {
+  viewProjects.hidden = true;
+  viewProject.hidden = false;
+}
+
 function renderProjects() {
   const projects = state.projects;
   projectCount.textContent = String(projects.length);
@@ -154,9 +167,9 @@ function renderProjects() {
 
   if (projects.length === 0) {
     projectList.innerHTML = "";
-    schemaSection.hidden = true;
     state.activeProjectId = null;
     localStorage.removeItem(STORAGE_PROJECT);
+    showProjectsView();
     return;
   }
 
@@ -166,47 +179,53 @@ function renderProjects() {
   ) {
     state.activeProjectId = null;
     localStorage.removeItem(STORAGE_PROJECT);
+    showProjectsView();
   }
 
   projectList.innerHTML = projects
     .map(
       (p) => `
-    <li class="project-item ${p._id === state.activeProjectId ? "active" : ""}" data-id="${escapeHtml(p._id)}" data-action="select">
+    <li class="project-item" data-id="${escapeHtml(p._id)}">
       <div class="project-info">
         <span class="project-name">${escapeHtml(p.name)}</span>
         <span class="project-slug">${escapeHtml(p.slug)}</span>
       </div>
-      ${
-        p.role === "owner"
-          ? `<button type="button" class="btn btn-ghost" data-action="delete" title="Удалить">×</button>`
-          : `<span class="project-role">${escapeHtml(p.role)}</span>`
-      }
+      <div class="project-actions">
+        <button type="button" class="btn btn-primary btn-sm" data-action="open">Открыть</button>
+        ${
+          p.role === "owner"
+            ? `<button type="button" class="btn btn-ghost btn-sm" data-action="delete" title="Удалить">×</button>`
+            : `<span class="project-role">${escapeHtml(p.role)}</span>`
+        }
+      </div>
     </li>`
     )
     .join("");
-
-  if (!state.activeProjectId && projects[0]) {
-    selectProject(projects[0]._id);
-  } else if (state.activeProjectId) {
-    void loadSchema();
-  }
 }
 
-function selectProject(id) {
+async function openProject(id) {
   state.activeProjectId = id;
   localStorage.setItem(STORAGE_PROJECT, id);
-  renderProjects();
+  showProjectView();
+  const project = state.projects.find((p) => p._id === id);
+  if (project) {
+    activeProjectTitle.textContent = project.name;
+    activeProjectSlug.textContent = project.slug;
+  }
+  tableList.innerHTML = '<li class="schema-empty muted">Загрузка…</li>';
+  fnList.innerHTML = '<li class="schema-empty muted">Загрузка…</li>';
+  await loadSchema();
 }
 
 function renderSchema() {
   const project = state.projects.find((p) => p._id === state.activeProjectId);
   if (!project) {
-    schemaSection.hidden = true;
+    showProjectsView();
     return;
   }
 
-  schemaSection.hidden = false;
-  activeProjectTitle.textContent = `Проект: ${project.name}`;
+  activeProjectTitle.textContent = project.name;
+  activeProjectSlug.textContent = project.slug;
 
   tableCount.textContent = String(state.tables.length);
   fnCount.textContent = String(state.functions.length);
@@ -266,6 +285,14 @@ async function loadMe() {
   userLine.textContent = `${me.user.name} · ${me.user.email}`;
   renderProjects();
   showApp();
+
+  const savedId = localStorage.getItem(STORAGE_PROJECT);
+  const reopen = savedId && state.projects.some((p) => p._id === savedId);
+  if (reopen) {
+    await openProject(savedId);
+  } else {
+    showProjectsView();
+  }
 }
 
 function switchAuthTab(tab) {
@@ -335,6 +362,7 @@ btnLogout.addEventListener("click", async () => {
   localStorage.removeItem(STORAGE_TOKEN);
   localStorage.removeItem(STORAGE_PROJECT);
   showAuth();
+  showProjectsView();
   setStatus("", "Готов");
 });
 
@@ -346,16 +374,22 @@ $("#form-new-project").addEventListener("submit", async (e) => {
     const p = await httpRun("projects:create", { name });
     $("#new-project-name").value = "";
     await loadMe();
-    selectProject(p._id);
+    await openProject(p._id);
   } catch (err) {
     alert(err.message);
   }
 });
 
 projectList.addEventListener("click", async (e) => {
+  const openBtn = e.target.closest("[data-action='open']");
+  if (openBtn) {
+    const item = openBtn.closest(".project-item");
+    if (item) await openProject(item.dataset.id);
+    return;
+  }
+
   const deleteBtn = e.target.closest("[data-action='delete']");
   if (deleteBtn) {
-    e.stopPropagation();
     const item = deleteBtn.closest(".project-item");
     if (!item) return;
     if (!confirm("Удалить проект?")) return;
@@ -364,16 +398,19 @@ projectList.addEventListener("click", async (e) => {
       if (state.activeProjectId === item.dataset.id) {
         state.activeProjectId = null;
         localStorage.removeItem(STORAGE_PROJECT);
+        showProjectsView();
       }
       await loadMe();
     } catch (err) {
       alert(err.message);
     }
-    return;
   }
+});
 
-  const item = e.target.closest("[data-action='select']");
-  if (item) selectProject(item.dataset.id);
+btnBackProjects.addEventListener("click", () => {
+  showProjectsView();
+  state.activeProjectId = null;
+  localStorage.removeItem(STORAGE_PROJECT);
 });
 
 $("#btn-add-table-field").addEventListener("click", () => {
