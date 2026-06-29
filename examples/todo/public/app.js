@@ -1,5 +1,6 @@
 const CFG = window.FLEX_CONFIG ?? { apiBase: "", httpOnly: false };
 const API = (CFG.apiBase || "").replace(/\/$/, "");
+const FETCH_TIMEOUT_MS = 12000;
 
 const STORAGE_TOKEN = "flex_token";
 const STORAGE_PROJECT = "flex_project_id";
@@ -34,6 +35,14 @@ let state = {
   tables: [],
   functions: [],
 };
+
+function fetchWithTimeout(url, options = {}) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  return fetch(url, { ...options, signal: controller.signal }).finally(() =>
+    clearTimeout(timer)
+  );
+}
 
 function apiUrl(path) {
   return API ? `${API}${path}` : path;
@@ -83,7 +92,7 @@ async function parseApiResponse(res) {
 }
 
 async function httpRun(path, args = {}) {
-  const res = await fetch(apiUrl("/api/run"), {
+  const res = await fetchWithTimeout(apiUrl("/api/run"), {
     method: "POST",
     headers: headers(),
     body: JSON.stringify({ path, args }),
@@ -453,7 +462,12 @@ fnList.addEventListener("click", async (e) => {
 
 tableFields.insertAdjacentHTML("beforeend", fieldRowHtml("table"));
 
-fetch(apiUrl("/api/health"))
+// Сразу показываем форму — не ждём ответа сервера
+showAuth();
+switchAuthTab("login");
+setStatus("", "Подключение…");
+
+fetchWithTimeout(apiUrl("/api/health"))
   .then(async (r) => {
     if (!r.ok) throw new Error("offline");
     if (state.token) {
@@ -465,15 +479,15 @@ fetch(apiUrl("/api/health"))
         state.token = null;
         state.activeProjectId = null;
         showAuth();
+        switchAuthTab("login");
         setStatus("", "Войдите снова");
       }
     } else {
-      showAuth();
-      switchAuthTab("login");
       setStatus("", "Готов");
     }
   })
   .catch(() => {
     showAuth();
-    setStatus("error", "Сервер недоступен");
+    switchAuthTab("login");
+    setStatus("error", "Сервер не отвечает");
   });
