@@ -7,6 +7,7 @@ import {
   serializeFields,
   type FieldDef,
 } from "./fieldTypes.js";
+import { writeProjectLog } from "./projectLog.js";
 
 const OPS = ["list", "get", "create", "patch", "remove"] as const;
 export type DynamicOp = (typeof OPS)[number];
@@ -209,7 +210,12 @@ async function runOperation(
         tableId,
         dataJson: JSON.stringify(data),
       });
-      return getRow(ctx, tableId, id);
+      const doc = await getRow(ctx, tableId, id);
+      await writeProjectLog(ctx, projectId, "info", "create", {
+        tableId,
+        id,
+      });
+      return doc;
     }
     case "patch": {
       const id = String(args.id ?? "");
@@ -221,13 +227,16 @@ async function runOperation(
       await ctx.db.patch("dynamicRows", id, {
         dataJson: JSON.stringify(rest),
       });
-      return getRow(ctx, tableId, id);
+      const doc = await getRow(ctx, tableId, id);
+      await writeProjectLog(ctx, projectId, "info", "patch", { tableId, id });
+      return doc;
     }
     case "remove": {
       const id = String(args.id ?? "");
       if (!id) throw new Error("Укажите id");
       await getRow(ctx, tableId, id);
       await ctx.db.delete("dynamicRows", id);
+      await writeProjectLog(ctx, projectId, "info", "remove", { tableId, id });
       return { ok: true, id };
     }
     default:

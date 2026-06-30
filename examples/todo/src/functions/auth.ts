@@ -1,14 +1,31 @@
 import { mutation, query, v } from "@flex/core";
-import { hashPassword, verifyPassword, createSessionToken } from "../lib/crypto.js";
-import { SESSION_MS, requireAuth } from "../lib/access.js";
+import { hashPassword, verifyPassword } from "../lib/crypto.js";
+import { requireAuth } from "../lib/access.js";
+import { normalizePhone } from "../lib/phone.js";
+import {
+  createUserSession,
+  publicUser,
+  start2faChallenge,
+  complete2faLogin,
+  findUserByLogin,
+} from "../lib/authSession.js";
+
+async function loginResult(ctx: Parameters<typeof createUserSession>[0], user: Record<string, unknown>) {
+  if (user.twoFactorEnabled) {
+    return start2faChallenge(ctx, user);
+  }
+  const token = await createUserSession(ctx, user._id as string);
+  return { token, user: publicUser(user) };
+}
 
 export const register = mutation({
   args: {
     email: v.string(),
     password: v.string(),
     name: v.string(),
+    phone: v.optional(v.string()),
   },
-  handler: async (ctx, { email, password, name }) => {
+  handler: async (ctx, { email, password, name, phone }) => {
     const normalized = email.trim().toLowerCase();
     if (password.length < 6) {
       throw new Error("Пароль минимум 6 символов");
@@ -20,22 +37,32 @@ export const register = mutation({
       .first();
     if (existing) throw new Error("Email уже занят");
 
+    let normalizedPhone: string | undefined;
+    if (phone?.trim()) {
+      normalizedPhone = normalizePhone(phone);
+      const phoneTaken = await ctx.db
+        .query("users")
+        .withIndex("by_phone", (q) => q.eq("phone", normalizedPhone!))
+        .first();
+      if (phoneTaken) throw new Error("Телефон уже занят");
+    }
+
     const userId = await ctx.db.insert("users", {
       email: normalized,
       passwordHash: hashPassword(password),
       name: name.trim(),
+      phone: normalizedPhone,
+      twoFactorEnabled: false,
+      twoFactorMethod: "email",
+      locale: "ru",
     });
 
-    const token = createSessionToken();
-    await ctx.db.insert("sessions", {
-      userId,
-      token,
-      expiresAt: Date.now() + SESSION_MS,
-    });
+    const token = await createUserSession(ctx, userId);
+    const user = await ctx.db.get("users", userId);
 
     return {
       token,
-      user: { _id: userId, email: normalized, name: name.trim() },
+      user: publicUser(user!),
     };
   },
 });
@@ -43,40 +70,39 @@ export const register = mutation({
 export const login = mutation({
   args: { email: v.string(), password: v.string() },
   handler: async (ctx, { email, password }) => {
-    const normalized = email.trim().toLowerCase();
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_email", (q) => q.eq("email", normalized))
-      .first();
-
+    const user = await findUserByLogin(ctx, email, "email");
     if (!user) {
       throw new Error("Аккаунт не найден. Сначала зарегистрируйтесь.");
     }
     if (!verifyPassword(password, user.passwordHash as string)) {
       throw new Error("Неверный пароль");
     }
+    return loginResult(ctx, user);
+  },
+});
 
-    const token = createSessionToken();
-    await ctx.db.insert("sessions", {
-      userId: user._id as string,
-      token,
-      expiresAt: Date.now() + SESSION_MS,
-    });
+export const loginByPhone = mutation({
+  args: { phone: v.string(), password: v.string() },
+  handler: async (ctx, { phone, password }) => {
+    const user = await findUserByLogin(ctx, phone, "phone");
+    if (!user) {
+      throw new Error("Аккаунт с этим телефоном не найден");
+    }
+    if (!verifyPassword(password, user.passwordHash as string)) {
+      throw new Error("Неверный пароль");
+    }
+    return loginResult(ctx, user);
+  },
+});
 
-    const projects = await ctx.db
-      .query("projectMembers")
-      .withIndex("by_user", (q) => q.eq("userId", user._id as string))
-      .collect();
-
-    return {
-      token,
-      user: {
-        _id: user._id,
-        email: user.email,
-        name: user.name,
-      },
-      projectIds: projects.map((p) => p.projectId),
-    };
+export const verify2fa = mutation({
+  args: { loginToken: v.string(), code: v.string() },
+  handler: async (ctx, { loginToken, code }) => {
+    const { userId } = await complete2faLogin(ctx, loginToken, code);
+    const user = await ctx.db.get("users", userId);
+    if (!user) throw new Error("Пользователь не найден");
+    const token = await createUserSession(ctx, userId);
+    return { token, user: publicUser(user) };
   },
 });
 
@@ -123,11 +149,7 @@ export const me = query({
     }
 
     return {
-      user: {
-        _id: user._id,
-        email: user.email,
-        name: user.name,
-      },
+      user: publicUser(user),
       projects,
       activeProjectId: ctx.auth?.projectId ?? null,
     };
@@ -156,5 +178,64 @@ export const changePassword = mutation({
     });
 
     return { ok: true };
+  },
+});
+
+export const updateSettings = mutation({
+  args: {
+    locale: v.optional(v.string()),
+    twoFactorEnabled: v.optional(v.boolean()),
+    twoFactorMethod: v.optional(v.string()),
+    phone: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const userId = requireAuth(ctx);
+    const user = await ctx.db.get("users", userId);
+    if (!user) throw new Error("Пользователь не найден");
+
+    const patch: Record<string, unknown> = {};
+
+    if (args.locale === "ru" || args.locale === "en") {
+      patch.locale = args.locale;
+    }
+
+    if (args.phone !== undefined) {
+      if (!args.phone.trim()) {
+        patch.phone = undefined;
+      } else {
+        const normalizedPhone = normalizePhone(args.phone);
+        const taken = await ctx.db
+          .query("users")
+          .withIndex("by_phone", (q) => q.eq("phone", normalizedPhone))
+          .first();
+        if (taken && taken._id !== userId) {
+          throw new Error("Телефон уже занят");
+        }
+        patch.phone = normalizedPhone;
+      }
+    }
+
+    if (args.twoFactorMethod === "email" || args.twoFactorMethod === "sms") {
+      patch.twoFactorMethod = args.twoFactorMethod;
+    }
+
+    if (typeof args.twoFactorEnabled === "boolean") {
+      if (args.twoFactorEnabled) {
+        const method = (args.twoFactorMethod ??
+          user.twoFactorMethod ??
+          "email") as string;
+        if (method === "sms" && !user.phone && !patch.phone) {
+          throw new Error("Добавьте телефон для SMS 2FA");
+        }
+      }
+      patch.twoFactorEnabled = args.twoFactorEnabled;
+    }
+
+    if (Object.keys(patch).length > 0) {
+      await ctx.db.patch("users", userId, patch);
+    }
+
+    const updated = await ctx.db.get("users", userId);
+    return { user: publicUser(updated!) };
   },
 });

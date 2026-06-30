@@ -8,6 +8,8 @@ const STORAGE_PASSWORD = "flex_password";
 
 const FIELD_TYPES = ["string", "number", "boolean", "id"];
 
+const t = (key) => window.FlexI18n?.t(key) ?? key;
+
 const $ = (sel) => document.querySelector(sel);
 
 const authScreen = $("#auth-screen");
@@ -17,8 +19,10 @@ const statusText = statusEl.querySelector(".status-text");
 const btnLogout = $("#btn-logout");
 const btnProfileAvatar = $("#btn-profile-avatar");
 const avatarInitials = $("#avatar-initials");
-const btnBackFromProfile = $("#btn-back-from-profile");
+const btnOpenSettings = $("#btn-open-settings");
+const btnBackFromSettings = $("#btn-back-from-settings");
 const viewProfile = $("#view-profile");
+const viewSettings = $("#view-settings");
 const profileDetails = $("#profile-details");
 const profilePasswordHint = $("#profile-password-hint");
 const projectList = $("#project-list");
@@ -29,14 +33,18 @@ const viewProject = $("#view-project");
 const btnBackProjects = $("#btn-back-projects");
 const activeProjectTitle = $("#active-project-title");
 const activeProjectSlug = $("#active-project-slug");
+const projectEmptyBanner = $("#project-empty-banner");
 const tableList = $("#table-list");
 const fnList = $("#fn-list");
+const logList = $("#log-list");
 const dataTableSelect = $("#data-table-select");
 const dataRows = $("#data-rows");
 const formNewRow = $("#form-new-row");
 const tableCount = $("#table-count");
 const fnCount = $("#fn-count");
 const tableFields = $("#table-fields");
+const form2fa = $("#form-2fa");
+const formLogin = $("#form-login");
 
 let state = {
   token: localStorage.getItem(STORAGE_TOKEN),
@@ -45,6 +53,10 @@ let state = {
   projects: [],
   tables: [],
   functions: [],
+  logs: [],
+  dashTab: "tables",
+  loginMode: "email",
+  pending2fa: null,
 };
 
 function fetchWithTimeout(url, options = {}) {
@@ -119,18 +131,20 @@ function showAuth() {
   document.documentElement.classList.remove("has-session");
   authScreen.hidden = false;
   appScreen.hidden = true;
-  btnLogout.hidden = true;
   btnProfileAvatar.hidden = true;
+  state.pending2fa = null;
+  form2fa.hidden = true;
+  formLogin.hidden = false;
 }
 
 function showApp() {
   document.documentElement.classList.add("has-session");
   authScreen.hidden = true;
   appScreen.hidden = false;
-  btnLogout.hidden = false;
   btnProfileAvatar.hidden = false;
   updateHeaderAvatar();
-  setStatus("connected", "В сети");
+  if (state.user?.locale) window.FlexI18n?.setLang(state.user.locale);
+  setStatus("connected", t("status_online"));
 }
 
 function userInitials(user) {
@@ -233,14 +247,25 @@ function setProfileAvatarActive(active) {
 
 function showProfileView() {
   viewProfile.hidden = false;
+  viewSettings.hidden = true;
   viewProjects.hidden = true;
   viewProject.hidden = true;
   setProfileAvatarActive(true);
   renderProfile();
 }
 
+function showSettingsView() {
+  viewProfile.hidden = true;
+  viewSettings.hidden = false;
+  viewProjects.hidden = true;
+  viewProject.hidden = true;
+  setProfileAvatarActive(true);
+  fillSettingsForm();
+}
+
 function showProjectsView() {
   viewProfile.hidden = true;
+  viewSettings.hidden = true;
   viewProjects.hidden = false;
   viewProject.hidden = true;
   setProfileAvatarActive(false);
@@ -248,9 +273,22 @@ function showProjectsView() {
 
 function showProjectView() {
   viewProfile.hidden = true;
+  viewSettings.hidden = true;
   viewProjects.hidden = true;
   viewProject.hidden = false;
   setProfileAvatarActive(false);
+}
+
+function showDashTab(tab) {
+  state.dashTab = tab;
+  document.querySelectorAll(".dash-tab").forEach((el) => {
+    el.classList.toggle("active", el.dataset.dash === tab);
+  });
+  document.querySelectorAll(".dash-panel").forEach((el) => {
+    const id = el.id.replace("dash-", "");
+    el.hidden = id !== tab;
+  });
+  if (tab === "logs") void loadLogs();
 }
 
 function renderProfile() {
@@ -278,6 +316,14 @@ function renderProfile() {
     <div class="profile-row">
       <dt>Почта</dt>
       <dd>${escapeHtml(user.email)}</dd>
+    </div>
+    <div class="profile-row">
+      <dt data-i18n="phone">Телефон</dt>
+      <dd>${user.phone ? escapeHtml(user.phone) : '<span class="muted">—</span>'}</dd>
+    </div>
+    <div class="profile-row">
+      <dt>2FA</dt>
+      <dd>${user.twoFactorEnabled ? escapeHtml(user.twoFactorMethod === "sms" ? "SMS" : "Почта") : '<span class="muted">Выкл</span>'}</dd>
     </div>
     <div class="profile-row">
       <dt>Пароль</dt>
@@ -351,6 +397,7 @@ async function openProject(id) {
   state.activeProjectId = id;
   localStorage.setItem(STORAGE_PROJECT, id);
   showProjectView();
+  showDashTab("tables");
   const project = state.projects.find((p) => p._id === id);
   if (project) {
     activeProjectTitle.textContent = project.name;
@@ -359,6 +406,47 @@ async function openProject(id) {
   tableList.innerHTML = '<li class="schema-empty muted">Загрузка…</li>';
   fnList.innerHTML = '<li class="schema-empty muted">Загрузка…</li>';
   await loadSchema();
+}
+
+function updateEmptyBanner() {
+  const empty = state.tables.length === 0 && state.functions.length === 0;
+  projectEmptyBanner.hidden = !empty;
+}
+
+async function loadLogs() {
+  if (!state.activeProjectId) return;
+  logList.innerHTML = '<li class="schema-empty muted">Загрузка…</li>';
+  try {
+    state.logs = await httpRun("logs:list", {
+      projectId: state.activeProjectId,
+      limit: 100,
+    });
+    if (!state.logs.length) {
+      logList.innerHTML = `<li class="schema-empty muted">${escapeHtml(t("no_logs"))}</li>`;
+      return;
+    }
+    logList.innerHTML = state.logs
+      .map((log) => {
+        const when = new Date(log.createdAt).toLocaleString();
+        return `<li class="log-item log-${escapeHtml(log.level)}">
+          <span class="log-time">${escapeHtml(when)}</span>
+          <span class="log-level">${escapeHtml(log.level)}</span>
+          <span class="log-msg">${escapeHtml(log.message)}</span>
+        </li>`;
+      })
+      .join("");
+  } catch (err) {
+    logList.innerHTML = `<li class="schema-empty muted">${escapeHtml(err.message)}</li>`;
+  }
+}
+
+function fillSettingsForm() {
+  const user = state.user;
+  if (!user) return;
+  $("#set-locale").value = user.locale || window.FlexI18n?.getLang() || "ru";
+  $("#set-phone").value = user.phone || "";
+  $("#set-2fa").checked = Boolean(user.twoFactorEnabled);
+  $("#set-2fa-method").value = user.twoFactorMethod || "email";
 }
 
 function renderSchema() {
@@ -373,6 +461,7 @@ function renderSchema() {
 
   tableCount.textContent = String(state.tables.length);
   fnCount.textContent = String(state.functions.length);
+  updateEmptyBanner();
 
   tableList.innerHTML =
     state.tables.length === 0
@@ -508,6 +597,7 @@ async function loadMe() {
   const me = await httpRun("auth:me", {});
   state.user = me.user;
   state.projects = me.projects;
+  if (state.user?.locale) window.FlexI18n?.setLang(state.user.locale);
   renderProjects();
   showApp();
 
@@ -521,18 +611,54 @@ async function loadMe() {
 }
 
 function switchAuthTab(tab) {
-  document.querySelectorAll(".auth-tab").forEach((t) => {
-    t.classList.toggle("active", t.dataset.tab === tab);
+  document.querySelectorAll(".auth-tab[data-tab]").forEach((el) => {
+    el.classList.toggle("active", el.dataset.tab === tab);
   });
-  const loginForm = $("#form-login");
   const registerForm = $("#form-register");
-  loginForm.hidden = tab !== "login";
+  formLogin.hidden = tab !== "login" || Boolean(state.pending2fa);
   registerForm.hidden = tab !== "register";
+  form2fa.hidden = !state.pending2fa;
 }
 
-document.querySelectorAll(".auth-tab").forEach((tab) => {
-  tab.addEventListener("click", () => switchAuthTab(tab.dataset.tab));
+function setLoginMode(mode) {
+  state.loginMode = mode;
+  document.querySelectorAll(".auth-tab[data-login-mode]").forEach((el) => {
+    el.classList.toggle("active", el.dataset.loginMode === mode);
+  });
+  $("#login-email-wrap").hidden = mode !== "email";
+  $("#login-phone-wrap").hidden = mode !== "phone";
+  $("#login-email").required = mode === "email";
+  $("#login-phone").required = mode === "phone";
+}
+
+function show2faStep(res, password) {
+  state.pending2fa = { loginToken: res.loginToken, password };
+  formLogin.hidden = true;
+  form2fa.hidden = false;
+  const channel =
+    res.channel === "sms" ? t("method_sms") : t("method_email");
+  $("#2fa-hint").textContent = `${t("verify_code")} (${channel})`;
+  $("#2fa-code").value = "";
+  $("#2fa-code").focus();
+}
+
+document.querySelectorAll(".auth-tab[data-tab]").forEach((tab) => {
+  tab.addEventListener("click", () => {
+    state.pending2fa = null;
+    form2fa.hidden = true;
+    switchAuthTab(tab.dataset.tab);
+  });
 });
+
+document.querySelectorAll(".auth-tab[data-login-mode]").forEach((tab) => {
+  tab.addEventListener("click", () => setLoginMode(tab.dataset.loginMode));
+});
+
+document.querySelectorAll(".dash-tab").forEach((tab) => {
+  tab.addEventListener("click", () => showDashTab(tab.dataset.dash));
+});
+
+setLoginMode("email");
 
 async function finishAuth(res, password) {
   state.token = res.token;
@@ -554,14 +680,17 @@ $("#form-login").addEventListener("submit", async (e) => {
   e.preventDefault();
   const password = $("#login-password").value;
   try {
-    const res = await httpRun(
-      "auth:login",
-      {
-        email: $("#login-email").value.trim(),
-        password,
-      },
-      { skipAuth: true }
-    );
+    const path =
+      state.loginMode === "phone" ? "auth:loginByPhone" : "auth:login";
+    const args =
+      state.loginMode === "phone"
+        ? { phone: $("#login-phone").value.trim(), password }
+        : { email: $("#login-email").value.trim(), password };
+    const res = await httpRun(path, args, { skipAuth: true });
+    if (res.requires2fa) {
+      show2faStep(res, password);
+      return;
+    }
     await finishAuth(res, password);
   } catch (err) {
     const msg = err.message || "Ошибка входа";
@@ -571,6 +700,27 @@ $("#form-login").addEventListener("submit", async (e) => {
       return;
     }
     alert(msg);
+  }
+});
+
+form2fa.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (!state.pending2fa) return;
+  try {
+    const res = await httpRun(
+      "auth:verify2fa",
+      {
+        loginToken: state.pending2fa.loginToken,
+        code: $("#2fa-code").value.trim(),
+      },
+      { skipAuth: true }
+    );
+    const password = state.pending2fa.password;
+    state.pending2fa = null;
+    form2fa.hidden = true;
+    await finishAuth(res, password);
+  } catch (err) {
+    alert(err.message);
   }
 });
 
@@ -590,6 +740,7 @@ $("#form-register").addEventListener("submit", async (e) => {
         name: $("#reg-name").value.trim(),
         email,
         password,
+        phone: $("#reg-phone").value.trim() || undefined,
       },
       { skipAuth: true }
     );
@@ -607,15 +758,37 @@ $("#form-register").addEventListener("submit", async (e) => {
 });
 
 btnProfileAvatar.addEventListener("click", () => {
-  if (viewProfile.hidden) {
+  if (viewProfile.hidden && viewSettings.hidden) {
     showProfileView();
   } else {
     showProjectsView();
   }
 });
 
-btnBackFromProfile.addEventListener("click", () => {
-  showProjectsView();
+btnOpenSettings.addEventListener("click", () => showSettingsView());
+
+btnBackFromSettings.addEventListener("click", () => showProfileView());
+
+$("#form-settings").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  try {
+    const res = await httpRun("auth:updateSettings", {
+      locale: $("#set-locale").value,
+      phone: $("#set-phone").value.trim(),
+      twoFactorEnabled: $("#set-2fa").checked,
+      twoFactorMethod: $("#set-2fa-method").value,
+    });
+    state.user = res.user;
+    window.FlexI18n?.setLang(res.user.locale || "ru");
+    renderProfile();
+    alert("Настройки сохранены");
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
+$("#set-locale").addEventListener("change", (e) => {
+  window.FlexI18n?.setLang(e.target.value);
 });
 
 $("#form-change-password").addEventListener("submit", async (e) => {
@@ -783,8 +956,8 @@ tableList.addEventListener("click", async (e) => {
     const item = dataBtn.closest(".schema-item");
     if (item) {
       dataTableSelect.value = item.dataset.id;
+      showDashTab("data");
       renderDataPanel();
-      dataTableSelect.scrollIntoView({ behavior: "smooth", block: "center" });
     }
     return;
   }

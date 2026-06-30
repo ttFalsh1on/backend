@@ -5,13 +5,29 @@ export const schema = defineSchema({
     email: v.string(),
     passwordHash: v.string(),
     name: v.string(),
-  }).index("by_email", ["email"]),
+    phone: v.optional(v.string()),
+    twoFactorEnabled: v.optional(v.boolean()),
+    twoFactorMethod: v.optional(v.string()),
+    locale: v.optional(v.string()),
+  })
+    .index("by_email", ["email"])
+    .index("by_phone", ["phone"]),
 
   sessions: defineTable({
     userId: v.id("users"),
     token: v.string(),
     expiresAt: v.number(),
   }).index("by_token", ["token"]),
+
+  otpChallenges: defineTable({
+    userId: v.id("users"),
+    purpose: v.string(),
+    channel: v.string(),
+    target: v.string(),
+    codeHash: v.string(),
+    expiresAt: v.number(),
+    loginToken: v.optional(v.string()),
+  }).index("by_login_token", ["loginToken"]),
 
   projects: defineTable({
     name: v.string(),
@@ -55,4 +71,12 @@ export const schema = defineSchema({
   })
     .index("by_table", ["tableId"])
     .index("by_project", ["projectId"]),
+
+  projectLogs: defineTable({
+    projectId: v.id("projects"),
+    level: v.string(),
+    message: v.string(),
+    metaJson: v.string(),
+    createdAt: v.number(),
+  }).index("by_project", ["projectId"]),
 });
