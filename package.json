@@ -10,6 +10,7 @@
     "build": "npm run build -w @flex/core -w @flex/server -w @flex/client -w @flex/cli -w @flex/react",
     "build:vercel": "npm run build && node scripts/vercel-build.mjs",
     "ship": "node scripts/ship.mjs",
+    "deploy:cf": "node scripts/deploy-cloudflare.mjs",
     "dev": "npm run dev -w @flex/example-todo",
     "dev:siteforge": "npm run dev -w @flex/example-siteforge",
     "flex": "node packages/flex-cli/dist/cli.js",

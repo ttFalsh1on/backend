@@ -1,0 +1,8 @@
+name = "flex-backend"
+compatibility_date = "2024-06-01"
+pages_build_output_dir = "../examples/todo/public"
+
+# Деплой: npm run deploy:cf
+
+[vars]
+VERCEL_ORIGIN = "https://flex-backend-ttfalsh1ons-projects.vercel.app"

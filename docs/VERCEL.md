@@ -70,3 +70,15 @@ X-Project-Id: <project_id>
 
 - `GET /api/health` → `{"ok":true}`
 - `GET /api` → справка по эндпоинтам
+
+### Рабочий URL продакшена
+
+Основной домен проекта:
+
+```
+https://flex-backend-ttfalsh1ons-projects.vercel.app
+```
+
+Если `flex-backend-free.vercel.app` не открывается (таймаут в браузере), а другой URL отвечает — это блокировка IP у провайдера, а не падение сервера. Используйте ссылку выше или VPN / DNS `8.8.8.8`.
+
+**Без VPN из России:** [docs/ACCESS-WITHOUT-VPN.md](ACCESS-WITHOUT-VPN.md) — деплой на Cloudflare Pages (`npm run deploy:cf`).
