@@ -19,6 +19,7 @@ window.FLEX_CONFIG = {
   apiBase: "",
   httpOnly: true,
   pollIntervalMs: 3000,
+  fetchTimeoutMs: 45000,
 };
 `,
   "utf8"

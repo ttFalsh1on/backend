@@ -23,6 +23,7 @@ window.FLEX_CONFIG = {
   apiBase: ${JSON.stringify(apiBase)},
   httpOnly: ${httpOnly},
   pollIntervalMs: 3000,
+  fetchTimeoutMs: 45000,
 };
 `;
 

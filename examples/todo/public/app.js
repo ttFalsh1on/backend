@@ -1,6 +1,6 @@
 const CFG = window.FLEX_CONFIG ?? { apiBase: "", httpOnly: false };
 const API = (CFG.apiBase || "").replace(/\/$/, "");
-const FETCH_TIMEOUT_MS = 12000;
+const FETCH_TIMEOUT_MS = CFG.fetchTimeoutMs ?? (CFG.httpOnly ? 45000 : 20000);
 
 const STORAGE_TOKEN = "flex_token";
 const STORAGE_PROJECT = "flex_project_id";
@@ -57,14 +57,20 @@ let state = {
   dashTab: "tables",
   loginMode: "email",
   pending2fa: null,
+  schemaLoadId: 0,
 };
 
-function fetchWithTimeout(url, options = {}) {
+function fetchWithTimeout(url, options = {}, timeoutMs = FETCH_TIMEOUT_MS) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-  return fetch(url, { ...options, signal: controller.signal }).finally(() =>
-    clearTimeout(timer)
-  );
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { ...options, signal: controller.signal })
+    .finally(() => clearTimeout(timer))
+    .catch((err) => {
+      if (err.name === "AbortError") {
+        throw new Error("Сервер не ответил вовремя — попробуйте ещё раз");
+      }
+      throw err;
+    });
 }
 
 function apiUrl(path) {
@@ -117,14 +123,37 @@ async function parseApiResponse(res) {
 }
 
 async function httpRun(path, args = {}, opts = {}) {
-  const res = await fetchWithTimeout(apiUrl("/api/run"), {
-    method: "POST",
-    headers: headers(opts),
-    body: JSON.stringify({ path, args }),
-  });
+  const timeoutMs =
+    opts.timeoutMs ?? (path.includes(":create") || path === "tables:create" ? 60000 : FETCH_TIMEOUT_MS);
+  const res = await fetchWithTimeout(
+    apiUrl("/api/run"),
+    {
+      method: "POST",
+      headers: headers(opts),
+      body: JSON.stringify({ path, args }),
+    },
+    timeoutMs
+  );
   const data = await parseApiResponse(res);
   if (!res.ok) throw new Error(data.error ?? res.statusText);
   return data.value;
+}
+
+function showSchemaLoading() {
+  tableList.innerHTML = '<li class="schema-empty muted">Загрузка…</li>';
+  fnList.innerHTML = '<li class="schema-empty muted">Загрузка…</li>';
+}
+
+function showSchemaError(message) {
+  const msg = escapeHtml(message);
+  const retry = `<button type="button" class="btn btn-ghost btn-sm" data-retry-schema>Повторить</button>`;
+  tableList.innerHTML = `<li class="schema-empty schema-error muted">${msg} ${retry}</li>`;
+  fnList.innerHTML = `<li class="schema-empty muted">${msg}</li>`;
+  tableCount.textContent = "0";
+  fnCount.textContent = "0";
+  state.tables = [];
+  state.functions = [];
+  updateEmptyBanner();
 }
 
 function showAuth() {
@@ -403,9 +432,28 @@ async function openProject(id) {
     activeProjectTitle.textContent = project.name;
     activeProjectSlug.textContent = project.slug;
   }
-  tableList.innerHTML = '<li class="schema-empty muted">Загрузка…</li>';
-  fnList.innerHTML = '<li class="schema-empty muted">Загрузка…</li>';
   await loadSchema();
+}
+
+async function loadSchema() {
+  if (!state.activeProjectId) return;
+  const loadId = ++state.schemaLoadId;
+  showSchemaLoading();
+  try {
+    const data = await httpRun("schema:load", {
+      projectId: state.activeProjectId,
+    });
+    if (loadId !== state.schemaLoadId) return;
+    state.tables = Array.isArray(data?.tables) ? data.tables : [];
+    state.functions = Array.isArray(data?.functions) ? data.functions : [];
+    renderSchema();
+    setStatus("connected", t("status_online"));
+  } catch (err) {
+    if (loadId !== state.schemaLoadId) return;
+    const msg = err.message || "Ошибка загрузки";
+    setStatus("error", msg);
+    showSchemaError(msg);
+  }
 }
 
 function updateEmptyBanner() {
@@ -463,51 +511,55 @@ function renderSchema() {
   fnCount.textContent = String(state.functions.length);
   updateEmptyBanner();
 
-  tableList.innerHTML =
-    state.tables.length === 0
-      ? '<li class="schema-empty muted">Нет таблиц — создайте первую</li>'
-      : state.tables
-          .map(
-            (t) => `
-      <li class="schema-item" data-id="${escapeHtml(t._id)}" data-kind="table">
+  try {
+    tableList.innerHTML =
+      state.tables.length === 0
+        ? '<li class="schema-empty muted">Нет таблиц — создайте первую</li>'
+        : state.tables
+            .map(
+              (tbl) => `
+      <li class="schema-item" data-id="${escapeHtml(tbl._id)}" data-kind="table">
         <div>
-          <strong>${escapeHtml(t.name)}</strong>
-          <p class="schema-fields">${renderFieldDefs(t.fields)}</p>
-          <p class="schema-paths"><code>${escapeHtml(t.listPath)}</code> · <code>${escapeHtml(t.createPath)}</code></p>
+          <strong>${escapeHtml(tbl.name)}</strong>
+          <p class="schema-fields">${renderFieldDefs(tbl.fields || [])}</p>
+          <p class="schema-paths"><code>${escapeHtml(tbl.listPath)}</code> · <code>${escapeHtml(tbl.createPath)}</code></p>
         </div>
         <div class="schema-item-actions">
           <button type="button" class="btn btn-ghost btn-sm" data-action="view-data">Данные</button>
           <button type="button" class="btn btn-ghost" data-action="delete-table">×</button>
         </div>
       </li>`
-          )
-          .join("");
+            )
+            .join("");
 
-  dataTableSelect.innerHTML =
-    '<option value="">— выберите таблицу —</option>' +
-    state.tables
-      .map(
-        (t) =>
-          `<option value="${escapeHtml(t._id)}">${escapeHtml(t.name)}</option>`
-      )
-      .join("");
+    dataTableSelect.innerHTML =
+      '<option value="">— выберите таблицу —</option>' +
+      state.tables
+        .map(
+          (tbl) =>
+            `<option value="${escapeHtml(tbl._id)}">${escapeHtml(tbl.name)}</option>`
+        )
+        .join("");
 
-  fnList.innerHTML =
-    state.functions.length === 0
-      ? '<li class="schema-empty muted">Создайте таблицу — функции появятся автоматически</li>'
-      : state.functions
-          .map(
-            (f) => `
+    fnList.innerHTML =
+      state.functions.length === 0
+        ? '<li class="schema-empty muted">Создайте таблицу — функции появятся автоматически</li>'
+        : state.functions
+            .map(
+              (f) => `
       <li class="schema-item" data-id="${escapeHtml(f._id)}" data-kind="fn">
         <div>
-          <strong><span class="kind-tag kind-${escapeHtml(f.kind)}">${escapeHtml(f.kind)}</span> <code>${escapeHtml(f.name)}</code></strong>
-          <p class="schema-fields">${renderFieldDefs(f.args)}</p>
+          <strong><span class="kind-tag kind-${escapeHtml(f.kind || "query")}">${escapeHtml(f.kind || "query")}</span> <code>${escapeHtml(f.name)}</code></strong>
+          <p class="schema-fields">${renderFieldDefs(f.args || [])}</p>
         </div>
       </li>`
-          )
-          .join("");
+            )
+            .join("");
 
-  renderDataPanel();
+    renderDataPanel();
+  } catch (err) {
+    showSchemaError(err.message || "Ошибка отображения");
+  }
 }
 
 function getActiveTable() {
@@ -575,21 +627,6 @@ function renderDataPanel() {
   } else {
     dataRows.innerHTML = '<li class="schema-empty muted">Выберите таблицу</li>';
     formNewRow.hidden = true;
-  }
-}
-
-async function loadSchema() {
-  if (!state.activeProjectId) return;
-  try {
-    state.tables = await httpRun("tables:list", {
-      projectId: state.activeProjectId,
-    });
-    state.functions = await httpRun("projectFns:list", {
-      projectId: state.activeProjectId,
-    });
-    renderSchema();
-  } catch (err) {
-    setStatus("error", err.message);
   }
 }
 
@@ -935,6 +972,12 @@ $("#form-new-table").addEventListener("submit", async (e) => {
     alert("Добавьте хотя бы одно поле");
     return;
   }
+  const submitBtn = e.target.querySelector('button[type="submit"]');
+  const prevLabel = submitBtn?.textContent;
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Сохранение…";
+  }
   try {
     await httpRun("tables:create", {
       name: $("#table-name").value.trim(),
@@ -947,10 +990,19 @@ $("#form-new-table").addEventListener("submit", async (e) => {
     await loadSchema();
   } catch (err) {
     alert(err.message);
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = prevLabel || "Добавить таблицу";
+    }
   }
 });
 
 tableList.addEventListener("click", async (e) => {
+  if (e.target.closest("[data-retry-schema]")) {
+    await loadSchema();
+    return;
+  }
   const dataBtn = e.target.closest("[data-action='view-data']");
   if (dataBtn) {
     const item = dataBtn.closest(".schema-item");

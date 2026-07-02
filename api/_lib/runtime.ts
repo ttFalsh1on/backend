@@ -7,6 +7,7 @@ import * as projectFns from "./todo/functions/projects.js";
 import * as tableFns from "./todo/functions/tables.js";
 import * as customFns from "./todo/functions/projectFns.js";
 import * as logFns from "./todo/functions/logs.js";
+import * as schemaFns from "./todo/functions/schema.js";
 import { createApiDatabase } from "./createDb.js";
 
 let runtime: FlexRuntime | null = null;
@@ -25,6 +26,7 @@ async function initRuntime(): Promise<FlexRuntime> {
   rt.registerModule("tables", tableFns);
   rt.registerModule("projectFns", customFns);
   rt.registerModule("logs", logFns);
+  rt.registerModule("schema", schemaFns);
   return rt;
 }
 
